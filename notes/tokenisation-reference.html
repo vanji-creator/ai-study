@@ -1,0 +1,829 @@
+<title>Tokenisation, Stage by Stage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --paper:#F2F5F7; --surface:#FFFFFF; --surface-2:#E9EEF2;
+    --ink:#132029; --ink-soft:#4C5D6B; --ink-faint:#6E8090;
+    --rule:#D5DEE5; --rule-soft:#E4EAEF;
+    --accent:#1D5C86; --accent-soft:#E0EDF5; --accent-line:#7FAFCC;
+    --warn:#96371F; --warn-soft:#F8E9E3;
+    --ok:#2B6650; --ok-soft:#E2EFE9;
+    --serif:"IBM Plex Serif",Georgia,serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E151B; --surface:#151D25; --surface-2:#1B252E;
+      --ink:#E4EBF1; --ink-soft:#A2B2BF; --ink-faint:#7D8E9C;
+      --rule:#293742; --rule-soft:#202C35;
+      --accent:#73B4DF; --accent-soft:#14303F; --accent-line:#3C6E8C;
+      --warn:#E18F73; --warn-soft:#361F17;
+      --ok:#7FC3A1; --ok-soft:#173026;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E151B; --surface:#151D25; --surface-2:#1B252E;
+    --ink:#E4EBF1; --ink-soft:#A2B2BF; --ink-faint:#7D8E9C;
+    --rule:#293742; --rule-soft:#202C35;
+    --accent:#73B4DF; --accent-soft:#14303F; --accent-line:#3C6E8C;
+    --warn:#E18F73; --warn-soft:#361F17;
+    --ok:#7FC3A1; --ok-soft:#173026;
+  }
+
+  body{background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.6;}
+  .bar{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+    background:var(--surface); border-bottom:1px solid var(--rule);
+    display:flex; gap:12px; align-items:baseline; flex-wrap:wrap;
+    padding:10px 20px;
+  }
+  .bar b{font-family:var(--serif); font-weight:600; font-size:15px;}
+  .bar span{font-family:var(--mono); font-size:11px; color:var(--ink-faint); letter-spacing:.04em;}
+  .wrap{max-width:74ch; margin:0 auto; padding-inline:20px; padding-block:28px 72px;}
+
+  h1{font-family:var(--serif); font-size:clamp(28px,6vw,40px); line-height:1.15; margin:0 0 8px; text-wrap:balance;}
+  h2{font-family:var(--serif); font-size:23px; margin:56px 0 4px; text-wrap:balance; scroll-margin-top:70px;}
+  h3{font-family:var(--sans); font-weight:600; font-size:16px; margin:30px 0 4px;}
+  .lede{color:var(--ink-soft); font-size:16px; margin:0 0 4px;}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px;}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0; padding-left:20px;} li{margin:5px 0;}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface-2); padding:1px 5px; border-radius:3px;}
+  pre{font-family:var(--mono); font-size:12.5px; line-height:1.55; background:var(--surface); border:1px solid var(--rule);
+      border-radius:6px; padding:14px 16px; overflow-x:auto; margin:14px 0;}
+  pre code{background:none; padding:0; font-size:inherit;}
+  a{color:var(--accent);}
+
+  .toc{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:16px 18px; margin:26px 0 8px;}
+  .toc ol{columns:2; column-gap:26px; margin:6px 0 0; padding-left:18px; font-size:14px;}
+  @media (max-width:520px){ .toc ol{columns:1;} }
+  .toc a{text-decoration:none;} .toc a:hover{text-decoration:underline;}
+
+  .stage{border-left:3px solid var(--rule); padding-left:16px; margin:22px 0;}
+  .stage .tag{font-family:var(--mono); font-size:11px; font-weight:600; color:var(--accent); letter-spacing:.06em;}
+  .stage h3{margin-top:2px;}
+  .stage dl{margin:8px 0 0;} .stage dt{font-weight:600; font-size:13px; margin-top:8px; color:var(--ink);}
+  .stage dd{margin:2px 0 0; color:var(--ink-soft); font-size:14.5px;}
+
+  .note{border-radius:6px; padding:12px 14px; margin:16px 0; font-size:14.5px;}
+  .note .lbl{display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px;}
+  .note.red{background:var(--warn-soft); color:var(--warn); border:1px solid color-mix(in srgb, var(--warn) 30%, transparent);}
+  .note.red .lbl{color:var(--warn);}
+  .note.blue{background:var(--accent-soft); border:1px solid var(--accent-line); color:var(--ink);}
+  .note.blue .lbl{color:var(--accent);}
+  .note.green{background:var(--ok-soft); border:1px solid color-mix(in srgb, var(--ok) 35%, transparent); color:var(--ink);}
+  .note.green .lbl{color:var(--ok);}
+  .note b{color:inherit;}
+
+  figure{margin:22px 0;}
+  .figbox{overflow-x:auto; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:14px;}
+  figure svg{display:block; max-width:100%; height:auto; min-width:560px; color:var(--ink);}
+  figcaption{font-size:13px; color:var(--ink-faint); margin-top:8px;}
+  .svg-label{font-family:var(--mono); font-size:11px; fill:currentColor;}
+  .svg-title{font-family:var(--sans); font-size:12.5px; font-weight:600; fill:currentColor;}
+  .svg-sub{font-family:var(--mono); font-size:10.5px; fill:currentColor; opacity:.72;}
+  .svg-box{fill:var(--surface-2); stroke:currentColor; stroke-opacity:.45;}
+  .svg-accent-box{fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.6;}
+  .svg-line{stroke:currentColor; stroke-opacity:.6; fill:none;}
+  .svg-accent{stroke:var(--accent); fill:none; stroke-width:1.6;}
+  .svg-warn{stroke:var(--warn); fill:none;}
+
+  table{border-collapse:collapse; width:100%; font-size:14px; margin:14px 0;}
+  .tablebox{overflow-x:auto;}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule-soft); vertical-align:top;}
+  th{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); font-weight:600;}
+  td code{font-size:12.5px;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  details.q{background:var(--surface); border:1px solid var(--rule); border-radius:6px; margin:8px 0; padding:0;}
+  details.q summary{cursor:pointer; padding:12px 14px; font-weight:500; font-size:15px; list-style:none; display:flex; gap:10px;}
+  details.q summary::-webkit-details-marker{display:none;}
+  details.q summary::before{content:"?"; font-family:var(--mono); color:var(--accent); font-weight:600;}
+  details.q[open] summary{border-bottom:1px solid var(--rule-soft);}
+  details.q .ans{padding:12px 14px 14px 34px; font-size:14.5px; color:var(--ink-soft);}
+  details.q .ans code{font-size:12.5px;}
+  .missed{display:flex; align-items:center; gap:7px; margin-top:10px; font-size:12.5px; color:var(--ink-faint); font-family:var(--mono);}
+  .missed input{accent-color:var(--warn);}
+  .qhead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:6px;}
+  #score{font-family:var(--mono); font-size:12.5px; color:var(--warn);}
+  .foot{margin-top:56px; padding-top:18px; border-top:1px solid var(--rule); font-size:13px; color:var(--ink-faint);}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+</style>
+
+<div class="bar">
+  <b>Tokenisation</b>
+  <span>BLOCK 1 · PART 1 · COMPLETE 2026-09-21</span>
+</div>
+
+<div class="wrap">
+
+<p class="eyebrow">AI engineer study · block 1</p>
+<h1>Tokenisation, stage by stage</h1>
+<p class="lede">How text becomes the integers a model can read — the two pipelines, every stage, and a worked example run on real code in this repository.</p>
+
+<div class="toc">
+  <strong style="font-size:13px;">On this page</strong>
+  <ol>
+    <li><a href="#def">What tokenisation is</a></li>
+    <li><a href="#two">Two pipelines, not one</a></li>
+    <li><a href="#build">Pipeline A — build it</a></li>
+    <li><a href="#artifact">The frozen tokeniser</a></li>
+    <li><a href="#use">Pipeline B — use it</a></li>
+    <li><a href="#decode">Decode — the way back</a></li>
+    <li><a href="#example">Worked example, real output</a></li>
+    <li><a href="#merge">One merge step, drawn</a></li>
+    <li><a href="#cost">Why other languages cost more</a></li>
+    <li><a href="#special">Special tokens</a></li>
+    <li><a href="#space">The trailing space</a></li>
+    <li><a href="#real">Real tokenisers</a></li>
+    <li><a href="#numbers">Numbers to memorise</a></li>
+    <li><a href="#scripts">Scripts in this repo</a></li>
+    <li><a href="#quiz">Self-quiz, cold</a></li>
+    <li><a href="#gaps">What I got wrong</a></li>
+  </ol>
+</div>
+
+<h2 id="def">1 · What tokenisation is</h2>
+
+<p>A model cannot read text. Its first layer is a lookup table with a fixed number of rows, decided before training and never changed afterwards. So every input must arrive as row numbers: a list of integers.</p>
+
+<p><b>Tokenisation</b> is the process of cutting text into pieces that exist in a fixed dictionary, and replacing each piece with its ID. A piece is called a <b>token</b>, and a token is usually part of a word, not a word. The <b>tokeniser</b> is that dictionary plus the ordered rules used to build it.</p>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 720 160" role="img" aria-label="Text is cut into pieces called tokens, then each piece is looked up in a dictionary to give an integer ID">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="currentColor" fill-opacity=".6"/>
+        </marker>
+      </defs>
+      <rect class="svg-box" x="20" y="42" width="170" height="78" rx="6"/>
+      <text class="svg-title" x="105" y="72" text-anchor="middle">text</text>
+      <text class="svg-sub" x="105" y="95" text-anchor="middle">"The cat"</text>
+
+      <rect class="svg-box" x="275" y="42" width="170" height="78" rx="6"/>
+      <text class="svg-title" x="360" y="72" text-anchor="middle">tokens</text>
+      <text class="svg-sub" x="360" y="95" text-anchor="middle">th · e · _cat</text>
+
+      <rect class="svg-box" x="530" y="42" width="170" height="78" rx="6"/>
+      <text class="svg-title" x="615" y="72" text-anchor="middle">IDs</text>
+      <text class="svg-sub" x="615" y="95" text-anchor="middle">375 101 402</text>
+
+      <line class="svg-line" x1="192" y1="81" x2="271" y2="81" marker-end="url(#ar)"/>
+      <text class="svg-label" x="232" y="60" text-anchor="middle">cut into</text>
+      <text class="svg-label" x="232" y="72" text-anchor="middle">pieces</text>
+
+      <line class="svg-line" x1="447" y1="81" x2="526" y2="81" marker-end="url(#ar)"/>
+      <text class="svg-label" x="487" y="60" text-anchor="middle">look up in</text>
+      <text class="svg-label" x="487" y="72" text-anchor="middle">dictionary</text>
+
+      <text class="svg-sub" x="20" y="140">a token is a piece of a word, not a word</text>
+    </svg>
+  </div>
+  <figcaption>The whole job in three states. Words never reach the model, and neither does any character.</figcaption>
+</figure>
+
+<div class="note blue">
+  <span class="lbl">Two words that get confused</span>
+  <b>Tokenisation</b> is the process. <b>Tokeniser</b> is the thing that performs it: the dictionary plus the merge list.
+</div>
+
+<h2 id="two">2 · Two pipelines, not one</h2>
+
+<p>A tokeniser is built once and used forever. Those are two separate pipelines that run at different times, and almost every confusion about tokenisers comes from mixing them.</p>
+
+<div class="tablebox">
+<table>
+  <tr><th>&nbsp;</th><th>Pipeline A — build</th><th>Pipeline B — use</th></tr>
+  <tr><td><b>When</b></td><td>Once, offline, before the model is trained</td><td>On every single request, forever</td></tr>
+  <tr><td><b>Input</b></td><td>A large corpus of text</td><td>One piece of text</td></tr>
+  <tr><td><b>Output</b></td><td>An ordered merge list + a vocabulary</td><td>A list of integers</td></tr>
+  <tr><td><b>Maths</b></td><td>Counting. No neural network.</td><td>Table lookup. No neural network.</td></tr>
+  <tr><td><b>Changes later?</b></td><td>Never. Training the model does not touch it.</td><td>Deterministic — same text, same IDs</td></tr>
+</table>
+</div>
+
+<h2 id="build">3 · Pipeline A — build the tokeniser</h2>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 900 300" role="img" aria-label="Pipeline A: a corpus is pre-tokenised and counted, split into bytes, then the most frequent pair is merged repeatedly until the vocabulary size is reached, producing the frozen tokeniser">
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="currentColor" fill-opacity=".6"/>
+        </marker>
+        <marker id="ar2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <rect class="svg-box" x="20" y="62" width="160" height="66" rx="6"/>
+      <text class="svg-title" x="100" y="90" text-anchor="middle">A1 corpus</text>
+      <text class="svg-sub" x="100" y="110" text-anchor="middle">a pile of text</text>
+
+      <rect class="svg-box" x="240" y="62" width="160" height="66" rx="6"/>
+      <text class="svg-title" x="320" y="90" text-anchor="middle">A2 chunks</text>
+      <text class="svg-sub" x="320" y="110" text-anchor="middle">split + count</text>
+
+      <rect class="svg-box" x="460" y="62" width="160" height="66" rx="6"/>
+      <text class="svg-title" x="540" y="90" text-anchor="middle">A3 bytes</text>
+      <text class="svg-sub" x="540" y="110" text-anchor="middle">utf-8, 0–255</text>
+
+      <rect class="svg-box" x="680" y="62" width="200" height="66" rx="6"/>
+      <text class="svg-title" x="780" y="90" text-anchor="middle">A4 count pairs,</text>
+      <text class="svg-title" x="780" y="106" text-anchor="middle">merge the top one</text>
+
+      <line class="svg-line" x1="182" y1="95" x2="236" y2="95" marker-end="url(#ar2)"/>
+      <text class="svg-label" x="209" y="82" text-anchor="middle">raw</text>
+      <line class="svg-line" x1="402" y1="95" x2="456" y2="95" marker-end="url(#ar2)"/>
+      <text class="svg-label" x="429" y="82" text-anchor="middle">encode</text>
+      <line class="svg-line" x1="622" y1="95" x2="676" y2="95" marker-end="url(#ar2)"/>
+      <text class="svg-label" x="649" y="82" text-anchor="middle">pieces</text>
+
+      <path class="svg-line" d="M880,62 V26 H680 V58" marker-end="url(#ar2)"/>
+      <text class="svg-label" x="780" y="18" text-anchor="middle">repeat until the vocabulary size is reached</text>
+
+      <rect class="svg-accent-box" x="500" y="196" width="380" height="78" rx="6"/>
+      <text class="svg-title" x="690" y="224" text-anchor="middle" style="fill:var(--accent)">A5 THE TOKENISER — frozen</text>
+      <text class="svg-sub" x="690" y="244" text-anchor="middle">ordered merge list</text>
+      <text class="svg-sub" x="690" y="260" text-anchor="middle">vocabulary: piece → ID</text>
+
+      <path class="svg-accent" d="M780,130 V192" marker-end="url(#ar2a)"/>
+      <text class="svg-label" x="792" y="166" style="fill:var(--accent)">output</text>
+
+      <text class="svg-sub" x="20" y="232">the corpus is</text>
+      <text class="svg-sub" x="20" y="248">thrown away</text>
+      <text class="svg-sub" x="20" y="264">after this point</text>
+    </svg>
+  </div>
+  <figcaption>Pipeline A runs once. Its only lasting output is the merge list and the vocabulary; the corpus is discarded.</figcaption>
+</figure>
+
+<div class="stage">
+  <span class="tag">A1</span>
+  <h3>Corpus</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>A large pile of plain text is collected. Nothing is trained here. The text is only counted.</dd>
+    <dt>What it decides</dt>
+    <dd>The language mix decides which languages get cheap tokens. The domain mix decides whether code, URLs and maths tokenise well. The size decides how reliable the counts are.</dd>
+    <dt>Afterwards</dt>
+    <dd>The corpus is discarded. Only the merge list survives.</dd>
+  </dl>
+</div>
+
+<div class="note red">
+  <span class="lbl">The consequence that lasts forever</span>
+  A mostly-English corpus means English pairs win every count and English pieces get the rows. Every other script then pays more tokens for the same meaning, for the whole life of that model. It cannot be fixed later.
+</div>
+
+<div class="stage">
+  <span class="tag">A2</span>
+  <h3>Pre-tokenise and count</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>The corpus is cut into chunks, usually at spaces and punctuation, and each distinct chunk is counted. The space stays attached to the <b>front</b> of the chunk that follows it.</dd>
+    <dt>Why chunks first</dt>
+    <dd>It stops merges from ever crossing a word boundary. Without it, a frequent pair like <code>e_t</code> spanning "the cat" would become a token, and tokens would straddle words.</dd>
+    <dt>Real number</dt>
+    <dd>Counting <code>CLAUDE.md</code> this way gives 1,355 distinct chunks.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">A3</span>
+  <h3>Split into bytes</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Each chunk is encoded to UTF-8 and becomes a sequence of single bytes, each a number from 0 to 255. This is the starting state: every piece is one byte long.</dd>
+    <dt>Why bytes and not letters</dt>
+    <dd>Letters would need about 150,000 rows to cover every script. Bytes need 256 and cover everything that can exist in a file.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">A4</span>
+  <h3>Count pairs, merge the most frequent, repeat</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Every pair of neighbouring pieces is counted across the whole corpus, weighted by how often its chunk appears. The most frequent pair is joined into one new piece everywhere, and recorded. Then the counting starts again on the new state.</dd>
+    <dt>Stopping</dt>
+    <dd>It stops after a <b>fixed number of merges, chosen in advance</b>. That number is the vocabulary size. It does not stop when counts get small.</dd>
+    <dt>What emerges</dt>
+    <dd>Frequent whole words become single pieces. Frequent word parts — <code>ing</code>, <code>est</code>, <code>er</code> — become pieces because they recur across many words. Nobody defines a suffix; counting finds them.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">A5</span>
+  <h3>Output: the merge list and the vocabulary</h3>
+  <dl>
+    <dt>Merge list</dt>
+    <dd>The merges in the order they were made. Order matters: replaying them out of order gives different tokens.</dd>
+    <dt>Vocabulary</dt>
+    <dd>A dictionary from piece to integer ID: 256 byte rows, then one row per merge, then the special tokens.</dd>
+    <dt>Real number</dt>
+    <dd>Our run: 256 + 400 merges = 656 rows, plus 2 special tokens.</dd>
+  </dl>
+</div>
+
+<h2 id="artifact">4 · The frozen tokeniser</h2>
+
+<p>The vocabulary has three kinds of rows, and one of them lives in a channel that user text cannot reach. That separation is the reason chat boundaries work at all.</p>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 900 310" role="img" aria-label="The vocabulary has byte rows and merged-piece rows that user text can reach, and special token rows that only application code can insert">
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="currentColor" fill-opacity=".6"/>
+        </marker>
+        <marker id="ar3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <rect class="svg-box" x="30" y="24" width="380" height="54" rx="6"/>
+      <text class="svg-title" x="220" y="47" text-anchor="middle">user text</text>
+      <text class="svg-sub" x="220" y="66" text-anchor="middle">anything a person can type</text>
+
+      <rect class="svg-accent-box" x="500" y="24" width="370" height="54" rx="6"/>
+      <text class="svg-title" x="685" y="47" text-anchor="middle" style="fill:var(--accent)">your application code</text>
+      <text class="svg-sub" x="685" y="66" text-anchor="middle">builds the chat structure</text>
+
+      <line class="svg-line" x1="220" y1="80" x2="220" y2="130" marker-end="url(#ar3)"/>
+      <text class="svg-label" x="230" y="108">tokenised into</text>
+
+      <path class="svg-accent" d="M685,80 V130" marker-end="url(#ar3a)"/>
+      <text class="svg-label" x="695" y="108" style="fill:var(--accent)">inserts IDs directly</text>
+
+      <rect class="svg-box" x="30" y="134" width="380" height="60" rx="6"/>
+      <text class="svg-title" x="220" y="160" text-anchor="middle">merged piece rows</text>
+      <text class="svg-sub" x="220" y="179" text-anchor="middle">_the · ing · play · est — IDs 256…N</text>
+
+      <rect class="svg-box" x="30" y="206" width="380" height="60" rx="6"/>
+      <text class="svg-title" x="220" y="232" text-anchor="middle">256 byte rows — the safety net</text>
+      <text class="svg-sub" x="220" y="251" text-anchor="middle">every possible byte, IDs 0–255</text>
+
+      <rect class="svg-accent-box" x="500" y="134" width="370" height="60" rx="6"/>
+      <text class="svg-title" x="685" y="160" text-anchor="middle" style="fill:var(--accent)">special token rows</text>
+      <text class="svg-sub" x="685" y="179" text-anchor="middle">turn boundaries, end of text, padding</text>
+
+      <line class="svg-warn" x1="414" y1="51" x2="492" y2="51" stroke-dasharray="5 4"/>
+      <line class="svg-warn" x1="446" y1="42" x2="462" y2="60"/>
+      <line class="svg-warn" x1="462" y1="42" x2="446" y2="60"/>
+      <text class="svg-label" x="454" y="80" text-anchor="middle" style="fill:var(--warn)">cannot reach</text>
+
+      <text class="svg-sub" x="30" y="292">typing the marker characters produces ordinary piece rows with different IDs — never the special row</text>
+    </svg>
+  </div>
+  <figcaption>Two channels into one vocabulary. Content enters through tokenisation; structure enters only through application code.</figcaption>
+</figure>
+
+<h2 id="use">5 · Pipeline B — use the tokeniser</h2>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 900 290" role="img" aria-label="Pipeline B: raw text is normalised, pre-tokenised, encoded to bytes, merged using the stored merge list, mapped to IDs, and special tokens are added before the list reaches the model">
+      <defs>
+        <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="currentColor" fill-opacity=".6"/>
+        </marker>
+      </defs>
+
+      <rect class="svg-box" x="20" y="30" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="110" y="56" text-anchor="middle">B1 raw text</text>
+      <text class="svg-sub" x="110" y="75" text-anchor="middle">'The café is not open'</text>
+
+      <rect class="svg-box" x="240" y="30" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="330" y="56" text-anchor="middle">B2 normalise</text>
+      <text class="svg-sub" x="330" y="75" text-anchor="middle">optional, varies</text>
+
+      <rect class="svg-box" x="460" y="30" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="550" y="56" text-anchor="middle">B3 pre-tokenise</text>
+      <text class="svg-sub" x="550" y="75" text-anchor="middle">space joins next word</text>
+
+      <rect class="svg-box" x="680" y="30" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="770" y="56" text-anchor="middle">B4 utf-8 bytes</text>
+      <text class="svg-sub" x="770" y="75" text-anchor="middle">[32, 99, 97, …]</text>
+
+      <line class="svg-line" x1="202" y1="61" x2="236" y2="61" marker-end="url(#ar4)"/>
+      <line class="svg-line" x1="422" y1="61" x2="456" y2="61" marker-end="url(#ar4)"/>
+      <line class="svg-line" x1="642" y1="61" x2="676" y2="61" marker-end="url(#ar4)"/>
+
+      <path class="svg-line" d="M770,94 V124 H110 V166" marker-end="url(#ar4)"/>
+
+      <rect class="svg-box" x="20" y="170" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="110" y="196" text-anchor="middle">B5 apply merges</text>
+      <text class="svg-sub" x="110" y="215" text-anchor="middle">in stored order</text>
+
+      <rect class="svg-box" x="240" y="170" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="330" y="196" text-anchor="middle">B6 pieces → IDs</text>
+      <text class="svg-sub" x="330" y="215" text-anchor="middle">dictionary lookup</text>
+
+      <rect class="svg-accent-box" x="460" y="170" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="550" y="196" text-anchor="middle" style="fill:var(--accent)">B7 add special</text>
+      <text class="svg-sub" x="550" y="215" text-anchor="middle">app code, not the model</text>
+
+      <rect class="svg-box" x="700" y="170" width="160" height="62" rx="6" stroke-dasharray="5 4"/>
+      <text class="svg-title" x="780" y="200" text-anchor="middle">model</text>
+      <text class="svg-sub" x="780" y="219" text-anchor="middle">flat list of ints</text>
+
+      <line class="svg-line" x1="202" y1="201" x2="236" y2="201" marker-end="url(#ar4)"/>
+      <line class="svg-line" x1="422" y1="201" x2="456" y2="201" marker-end="url(#ar4)"/>
+      <line class="svg-line" x1="642" y1="201" x2="696" y2="201" marker-end="url(#ar4)"/>
+
+      <text class="svg-sub" x="20" y="268">deterministic: the same text always produces the same IDs</text>
+    </svg>
+  </div>
+  <figcaption>Pipeline B on every request. Stages B1–B6 are the tokeniser; B7 belongs to your application.</figcaption>
+</figure>
+
+<div class="stage">
+  <span class="tag">B1</span><h3>Raw text</h3>
+  <dl><dt>What happens</dt><dd>A string arrives — a user message, a retrieved document, a system instruction. At this point it is characters, and the model cannot use any of it.</dd></dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B2</span><h3>Normalise</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Optional clean-up before splitting: Unicode normalisation so two ways of writing the same character agree, and sometimes lower-casing.</dd>
+    <dt>Watch out</dt>
+    <dd>Modern tokenisers usually keep case, because case carries meaning. Whether a given tokeniser normalises at all is a property of that tokeniser — check, do not assume. Our own script lower-cases, which is a simplification.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B3</span><h3>Pre-tokenise</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>The string is cut into chunks by the same rule used in A2, so runtime matches training. The space attaches to the word that follows it: <code>'the café is'</code> becomes <code>['the', ' café', ' is']</code>.</dd>
+    <dt>Why it matters</dt>
+    <dd>This is what makes <code>_the</code> and <code>the</code> two different tokens, and it is the whole reason a trailing space damages output.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B4</span><h3>Encode to bytes</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Each chunk becomes UTF-8 bytes. ASCII characters take 1 byte; other scripts take 2, 3 or 4. <code>' café'</code> becomes <code>[32, 99, 97, 102, 195, 169]</code> — six bytes for five characters, because <code>é</code> needs two.</dd>
+    <dt>Why nothing is lost</dt>
+    <dd>UTF-8 is reversible. <code>é</code> is never replaced by <code>e</code>; the pair 195, 169 means <code>é</code> and only <code>é</code>.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B5</span><h3>Apply the merge list, in order</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Merge 1 is applied everywhere it fits, then merge 2, and so on to the end of the list. No counting happens here — the counting was done once, in A4.</dd>
+    <dt>Unseen words</dt>
+    <dd>They are not a special case. <code>replaying</code> was never in the corpus and still becomes <code>r | e | play | ing</code>, because those merges exist. Anything with no merges stays as single bytes.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B6</span><h3>Pieces to IDs</h3>
+  <dl>
+    <dt>What happens</dt>
+    <dd>Each piece is looked up in the vocabulary and replaced by its integer. This is a dictionary lookup and cannot fail, because every single byte has a row.</dd>
+    <dt>What the ID means</dt>
+    <dd>Nothing yet. It is a row number, like a primary key. Meaning is learned later, during model training, from seeing that row in many sentences.</dd>
+  </dl>
+</div>
+
+<div class="stage">
+  <span class="tag">B7</span><h3>Add special tokens</h3>
+  <dl>
+    <dt>Who does it</dt>
+    <dd>Your application, or the provider's server — never the model, and never the user. The boundary IDs are placed around the content, not derived from it.</dd>
+    <dt>Result</dt>
+    <dd>One flat list of integers. The model sees only this. It has no idea a template existed.</dd>
+  </dl>
+</div>
+
+<h2 id="decode">6 · Decode — the way back</h2>
+
+<p>The model produces IDs, one at a time. Turning them back into text is the same table read in reverse.</p>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 900 150" role="img" aria-label="Decoding: IDs from the model become pieces, the pieces are joined as bytes, and UTF-8 decoding produces text">
+      <defs>
+        <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="currentColor" fill-opacity=".6"/>
+        </marker>
+      </defs>
+      <rect class="svg-box" x="20" y="34" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="110" y="60" text-anchor="middle">D1 IDs from model</text>
+      <text class="svg-sub" x="110" y="79" text-anchor="middle">one at a time</text>
+
+      <rect class="svg-box" x="240" y="34" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="330" y="60" text-anchor="middle">D2 ID → piece</text>
+      <text class="svg-sub" x="330" y="79" text-anchor="middle">reverse lookup</text>
+
+      <rect class="svg-box" x="460" y="34" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="550" y="60" text-anchor="middle">D3 join bytes</text>
+      <text class="svg-sub" x="550" y="79" text-anchor="middle">concatenate</text>
+
+      <rect class="svg-box" x="680" y="34" width="180" height="62" rx="6"/>
+      <text class="svg-title" x="770" y="60" text-anchor="middle">D4 utf-8 decode</text>
+      <text class="svg-sub" x="770" y="79" text-anchor="middle">bytes → text</text>
+
+      <line class="svg-line" x1="202" y1="65" x2="236" y2="65" marker-end="url(#ar5)"/>
+      <line class="svg-line" x1="422" y1="65" x2="456" y2="65" marker-end="url(#ar5)"/>
+      <line class="svg-line" x1="642" y1="65" x2="676" y2="65" marker-end="url(#ar5)"/>
+
+      <text class="svg-sub" x="20" y="126">the end-of-turn ID stops the loop and is removed before display</text>
+    </svg>
+  </div>
+  <figcaption>Decoding is a reverse table lookup. Special tokens are stripped; the end-of-turn ID ends generation.</figcaption>
+</figure>
+
+<div class="note blue">
+  <span class="lbl">Why a streaming answer can pause mid-word</span>
+  A multi-byte character can be split across two tokens. The bytes of a half-finished character cannot be decoded yet, so the text appears only once the following token arrives.
+</div>
+
+<h2 id="example">7 · Worked example, real output</h2>
+
+<p>Produced by <code>code/block-01/tokeniser_pipeline.py</code>: 400 merges counted over <code>CLAUDE.md</code>, then that tokeniser applied to one sentence. These numbers were run, not estimated.</p>
+
+<pre><code>PIPELINE A
+  corpus                 : CLAUDE.md, 16,882 characters
+  distinct chunks counted: 1,355
+  merges performed       : 400
+  vocabulary size        : 656 rows (256 bytes + 400 merges) + 2 special
+  first 6 merges         : _+t   _+a   e+r   i+n   o+n   r+e
+
+PIPELINE B   input: 'The café is not open'
+  B2 normalised     'the café is not open'
+  B3 pre-tokenised  ['the', ' café', ' is', ' not', ' open']
+  B4 bytes          ' café' -> [32, 99, 97, 102, 195, 169]
+  B5 after merges   ['th','e'] ['_c','a','f','&lt;195&gt;','&lt;169&gt;'] ['_is'] ['_not'] ['_o','p','en']
+  B6 token IDs      [375, 101, 265, 97, 102, 195, 169, 292, 311, 318, 112, 262]
+  B7 + special      [656, 375, …, 262, 657]
+
+DECODE              -> 'the café is not open'      exact round trip
+
+  12 tokens for 20 characters</code></pre>
+
+<div class="note red">
+  <span class="lbl">Three things to read out of that output</span>
+  <b>1.</b> <code>é</code> never merged. It stayed as raw bytes <code>&lt;195&gt; &lt;169&gt;</code>, because it was not in the corpus — yet nothing failed. That is the 256-row safety net working, and it is exactly why rare and non-English text costs more tokens.<br><br>
+  <b>2.</b> <code>the</code> cost two tokens while <code>&nbsp;is</code> cost one. <code>the</code> starts the sentence, so it has no leading space, and only the space-prefixed form was frequent enough to earn a row.<br><br>
+  <b>3.</b> The round trip returned the text exactly. Tokenisation is lossless.
+</div>
+
+<h2 id="merge">8 · One merge step, drawn</h2>
+
+<p>Corpus: <code>low</code>×5, <code>lower</code>×2, <code>newest</code>×6, <code>widest</code>×3. Every pair of neighbours is counted, weighted by how often its word appears.</p>
+
+<figure>
+  <div class="figbox">
+    <svg viewBox="0 0 900 250" role="img" aria-label="Before and after one merge: the pair e plus s occurs nine times and is joined into a single piece es in newest and widest">
+      <defs>
+        <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <polygon points="0,0 10,5 0,10" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <text class="svg-title" x="20" y="24">before</text>
+      <text class="svg-title" x="600" y="24">after</text>
+
+      <rect class="svg-accent-box" x="176" y="128" width="84" height="34" rx="4" fill="none"/>
+      <rect class="svg-accent-box" x="176" y="176" width="84" height="34" rx="4" fill="none"/>
+
+      <g class="svg-label">
+        <text x="20" y="58">low ×5</text><text x="96" y="58" class="svg-sub">l  o  w</text>
+        <text x="20" y="106">lower ×2</text><text x="96" y="106" class="svg-sub">l  o  w  e  r</text>
+        <text x="20" y="152">newest ×6</text><text x="96" y="152" class="svg-sub">n  e  w  e  s  t</text>
+        <text x="20" y="200">widest ×3</text><text x="96" y="200" class="svg-sub">w  i  d  e  s  t</text>
+      </g>
+
+      <text class="svg-label" x="320" y="58">counted pairs</text>
+      <g class="svg-sub">
+        <text x="320" y="82">e + s   9  ← top</text>
+        <text x="320" y="102">s + t   9</text>
+        <text x="320" y="122">w + e   8</text>
+        <text x="320" y="142">l + o   7</text>
+      </g>
+
+      <line class="svg-accent" x1="320" y1="176" x2="560" y2="176" marker-end="url(#ar6)"/>
+      <text class="svg-label" x="440" y="166" text-anchor="middle" style="fill:var(--accent)">merge e+s → es</text>
+      <text class="svg-sub" x="440" y="196" text-anchor="middle">new row in the vocabulary</text>
+
+      <g class="svg-label">
+        <text x="600" y="58">low</text><text x="690" y="58" class="svg-sub">l  o  w</text>
+        <text x="600" y="106">lower</text><text x="690" y="106" class="svg-sub">l  o  w  e  r</text>
+        <text x="600" y="152">newest</text><text x="690" y="152" class="svg-sub">n  e  w  es  t</text>
+        <text x="600" y="200">widest</text><text x="690" y="200" class="svg-sub">w  i  d  es  t</text>
+      </g>
+      <rect class="svg-accent-box" x="762" y="132" width="34" height="28" rx="4" fill="none"/>
+      <rect class="svg-accent-box" x="762" y="180" width="34" height="28" rx="4" fill="none"/>
+
+      <text class="svg-sub" x="20" y="238">six merges later: low, est, new — a whole word and two word parts, found only by counting</text>
+    </svg>
+  </div>
+  <figcaption>One iteration of A4. The pair with the highest weighted count becomes a single piece everywhere at once.</figcaption>
+</figure>
+
+<h2 id="cost">9 · Why other languages cost more</h2>
+
+<p>Two separate causes, both pushing the same way. Stating only one of them is a half answer.</p>
+
+<div class="tablebox">
+<table>
+  <tr><th>Cause</th><th>Mechanism</th><th>Effect</th></tr>
+  <tr><td><b>1. More bytes per character</b></td><td>UTF-8 gives ASCII 1 byte; Tamil, Japanese and similar scripts take 3 bytes per character</td><td>The sequence starts about 3× longer before any merging</td></tr>
+  <tr><td><b>2. Fewer merges apply</b></td><td>The counting corpus is mostly English, so English pairs win the counts and get the rows</td><td>Other scripts stay close to the byte level and are never collapsed</td></tr>
+</table>
+</div>
+
+<p>Together these give the 3–5× token ratio between a sentence and its English translation. Both are decided in Pipeline A, before the model exists.</p>
+
+<h2 id="special">10 · Special tokens</h2>
+
+<p>Rows that correspond to no text: end of text, start and end of turn, padding, and a mask marker for models trained to fill in blanks. They are ordinary rows to the model, which learns what they mean from training, exactly as it learns <code>_the</code>.</p>
+
+<p>What makes them special is that <b>the tokeniser will not produce them from user text</b>. Typing the marker characters yields ordinary piece rows with different IDs. Structure therefore travels in a channel content cannot write into.</p>
+
+<h3>Who inserts them — two shapes</h3>
+
+<div class="tablebox">
+<table>
+  <tr><th>&nbsp;</th><th>Way A — string first</th><th>Way B — IDs first</th></tr>
+  <tr><td><b>Method</b></td><td>Build one string containing marker text plus message text, then tokenise it with special-token parsing enabled</td><td>Tokenise each message separately with special tokens disabled, then join the ID lists with special IDs</td></tr>
+  <tr><td><b>Common?</b></td><td>Yes — most chat templates</td><td>Less common, safer</td></tr>
+  <tr><td><b>Risk</b></td><td>User content sits inside a string that is being parsed for markers. It must be stripped or escaped first.</td><td>User content is never parsed for markers</td></tr>
+</table>
+</div>
+
+<div class="note green">
+  <span class="lbl">First security control of the course</span>
+  User-supplied text is always tokenised with special tokens disabled. The application adds boundary IDs itself. With a hosted chat API this is enforced at the API boundary, because you send roles and content, not tokens. When you run a model yourself, the choice is yours. Returns in Block 9.
+</div>
+
+<h2 id="space">11 · The trailing space</h2>
+
+<p>Measured on <code>CLAUDE.md</code>: the first merge learned was a space joined to a letter, and 132 of the first 250 merges produced a piece beginning with a space. <code>_the</code> earned a row; bare <code>the</code> did not.</p>
+
+<pre><code>A:  "The capital of France is"       ->  … _is            next token: _Paris   common
+B:  "The capital of France is "      ->  … _is  _         next token: Paris    rare</code></pre>
+
+<p>In B the space has already been spent, so <code>_Paris</code> would produce two spaces and is unavailable. The model must use a bare piece instead. Two rare things now coincide: a lone space token, which almost never appears in training because spaces merge into the next word, and a space-less word piece. The model is in a state it seldom saw, and the output degrades — odd spacing, a weaker answer, a stray newline.</p>
+
+<p><b>Rule:</b> never end a prompt with a trailing space or an unintended newline. It matters most in completion-style calls and in few-shot examples you build by hand; in a chat API the template appends boundary tokens after your content, so your text is not last.</p>
+
+<h2 id="real">12 · Real tokenisers</h2>
+
+<div class="tablebox">
+<table>
+  <tr><th>Provider</th><th>Tokeniser</th><th>How to count</th></tr>
+  <tr><td><b>OpenAI</b></td><td>Public — <code>tiktoken</code>, open source, inspectable. Different encodings per model generation.</td><td>Locally, with the library</td></tr>
+  <tr><td><b>Anthropic</b></td><td>Not public. Counts are model-specific; the tokeniser introduced with Opus 4.7 produces roughly 1×–1.35× the tokens of the earlier one on the same text.</td><td><code>POST /v1/messages/count_tokens</code>, passing the model ID</td></tr>
+  <tr><td><b>Open-weight</b><br>Llama, Mistral, Qwen, LaBSE, bge-reranker</td><td>Ships inside the model folder. You can open the file and read the merges.</td><td>Locally, and you build the token list yourself</td></tr>
+</table>
+</div>
+
+<div class="note red">
+  <span class="lbl">Do not estimate across providers</span>
+  <code>tiktoken</code> undercounts Claude by roughly 15–20% on ordinary English, and by more on code and non-English text. A merge list learned from one corpus does not describe another model's vocabulary. Counting with the wrong tokeniser is the most common way a cost estimate goes wrong.
+</div>
+
+<div class="note blue">
+  <span class="lbl">Check this is current</span>
+  Vocabulary sizes, encoding names and per-model tokeniser details move with each release. Everything else on this page is mechanism and does not move.
+</div>
+
+<h2 id="numbers">13 · Numbers to memorise</h2>
+
+<div class="tablebox">
+<table>
+  <tr><td class="num">1 token</td><td>≈ 4 characters ≈ 0.75 English words</td></tr>
+  <tr><td class="num">3–5×</td><td>Token cost of Indic or CJK text versus its English translation</td></tr>
+  <tr><td class="num">1 byte</td><td>English letters, digits, punctuation. Other scripts: 2–4 bytes</td></tr>
+  <tr><td class="num">256</td><td>Possible byte values — the size of the safety net</td></tr>
+  <tr><td class="num">~150,000</td><td>Characters Unicode defines — why the safety net is bytes, not characters</td></tr>
+  <tr><td class="num">64.5%</td><td>Distinct words in <code>CLAUDE.md</code> that appear exactly once — the long tail that breaks word-level vocabularies</td></tr>
+  <tr><td class="num">15–20%</td><td>How much <code>tiktoken</code> undercounts Claude on ordinary English</td></tr>
+</table>
+</div>
+
+<h2 id="scripts">14 · Scripts in this repo</h2>
+
+<div class="tablebox">
+<table>
+  <tr><th>Script</th><th>What it shows</th></tr>
+  <tr><td><code>word_frequency_tail.py</code></td><td>The long tail of word frequency; shared roots a word table would separate</td></tr>
+  <tr><td><code>pair_merging_by_hand.py</code></td><td>BPE on <code>low / lower / newest / widest</code>, merge by merge</td></tr>
+  <tr><td><code>pair_merging_ing.py</code></td><td>The same loop discovering <code>ing</code> from eight words</td></tr>
+  <tr><td><code>text_as_bytes.py</code></td><td>Characters versus bytes across scripts and emoji</td></tr>
+  <tr><td><code>bytes_explained.py</code></td><td>Code points, UTF-8, the exact round trip, a single byte failing to decode</td></tr>
+  <tr><td><code>space_belongs_to_the_word.py</code></td><td>Merges learning <code>_the</code> rather than <code>the</code></td></tr>
+  <tr><td><code>tokeniser_pipeline.py</code></td><td>Both pipelines end to end, every stage printed</td></tr>
+</table>
+</div>
+
+<p>All under <code>code/block-01/</code>. Change one number and re-run — that is what they are for.</p>
+
+<h2 id="quiz">15 · Self-quiz, cold</h2>
+
+<div class="qhead">
+  <p style="margin:0; color:var(--ink-soft); font-size:14.5px;">Answer out loud before opening each one. Tick the ones you missed; the count is kept in this browser.</p>
+  <span id="score"></span>
+</div>
+
+<div id="quiz">
+  <details class="q" id="q1"><summary>Why can a byte-level tokeniser never fail on an input?</summary><div class="ans">Every input is already bytes, and all 256 possible byte values have rows. There is always a fallback piece, so no text in any script can produce a missing entry.<div class="missed"><label><input type="checkbox" data-q="q1"> missed this</label></div></div></details>
+
+  <details class="q" id="q2"><summary>What decides which pieces become tokens?</summary><div class="ans">Frequency in the counting corpus. The most frequent pair of neighbouring pieces is merged, and that repeats a fixed number of times.<div class="missed"><label><input type="checkbox" data-q="q2"> missed this</label></div></div></details>
+
+  <details class="q" id="q3"><summary>When does the merging loop stop?</summary><div class="ans">After a fixed number of merges chosen in advance — the vocabulary size. Not when counts get small.<div class="missed"><label><input type="checkbox" data-q="q3"> missed this</label></div></div></details>
+
+  <details class="q" id="q4"><summary>Does training the model change the tokeniser?</summary><div class="ans">No. The tokeniser is built before training and is frozen. Model training changes the embedding rows, never the merge list.<div class="missed"><label><input type="checkbox" data-q="q4"> missed this</label></div></div></details>
+
+  <details class="q" id="q5"><summary>The same sentence gives 22 tokens on one model and 30 on another. Why?</summary><div class="ans">Different merge lists, learned from different corpora, with different vocabulary sizes. The tokeniser is a property of the model.<div class="missed"><label><input type="checkbox" data-q="q5"> missed this</label></div></div></details>
+
+  <details class="q" id="q6"><summary>Give both reasons a Tamil or Japanese sentence costs more tokens than its English translation.</summary><div class="ans">(1) UTF-8 uses about 3 bytes per character instead of 1, so the sequence starts longer. (2) The counting corpus was mostly English, so few merges apply and the text stays near byte level.<div class="missed"><label><input type="checkbox" data-q="q6"> missed this</label></div></div></details>
+
+  <details class="q" id="q7"><summary>What does the integer ID of a token mean?</summary><div class="ans">Nothing on its own. It is a row number, like a primary key. Meaning is learned during model training from seeing that row in many sentences.<div class="missed"><label><input type="checkbox" data-q="q7"> missed this</label></div></div></details>
+
+  <details class="q" id="q8"><summary>Why is a word-level vocabulary a bad idea, in two ways?</summary><div class="ans">Unseen words have no row at all and collapse into one junk entry. And the long tail is huge — 64.5% of distinct words in <code>CLAUDE.md</code> appear once, so most rows would barely be trained. It also separates shared roots like <code>play</code> and <code>playing</code>.<div class="missed"><label><input type="checkbox" data-q="q8"> missed this</label></div></div></details>
+
+  <details class="q" id="q9"><summary>Why not use single letters for everything?</summary><div class="ans">It never fails, but sequences become roughly 4× longer, and attention cost grows faster than linearly with length. The model must also rebuild every word from letters before using it.<div class="missed"><label><input type="checkbox" data-q="q9"> missed this</label></div></div></details>
+
+  <details class="q" id="q10"><summary>Is <code>é</code> ever replaced by <code>e</code>?</summary><div class="ans">No. <code>e</code> is code point 101 and <code>é</code> is 233, two different characters. <code>é</code> is stored as the two bytes 195 and 169, which decode back to <code>é</code> exactly. Nothing is approximated.<div class="missed"><label><input type="checkbox" data-q="q10"> missed this</label></div></div></details>
+
+  <details class="q" id="q11"><summary>Why does UTF-8 use two bytes for <code>é</code> when 233 fits in one byte?</summary><div class="ans">Byte values 0–127 are reserved for ASCII characters. Any byte above 127 signals that more bytes follow, so 233 alone would be ambiguous.<div class="missed"><label><input type="checkbox" data-q="q11"> missed this</label></div></div></details>
+
+  <details class="q" id="q12"><summary>What is the output of tokeniser training, and what happens to the corpus?</summary><div class="ans">An ordered merge list plus a vocabulary mapping pieces to IDs. The corpus is discarded.<div class="missed"><label><input type="checkbox" data-q="q12"> missed this</label></div></div></details>
+
+  <details class="q" id="q13"><summary>How is a word the tokeniser has never seen handled?</summary><div class="ans">Not as a special case. The merges are replayed in order; whatever matches is joined, and the rest stays as smaller pieces or single bytes. <code>replaying</code> → <code>r | e | play | ing</code>.<div class="missed"><label><input type="checkbox" data-q="q13"> missed this</label></div></div></details>
+
+  <details class="q" id="q14"><summary>Why must pre-tokenisation happen before merging?</summary><div class="ans">To stop merges from crossing word boundaries. Without it, a frequent pair spanning two words would become a single token.<div class="missed"><label><input type="checkbox" data-q="q14"> missed this</label></div></div></details>
+
+  <details class="q" id="q15"><summary>Which token does a space belong to, and what follows from that?</summary><div class="ans">The word after it. <code>_the</code> and <code>the</code> are different tokens, and a trailing space in a prompt leaves a rare lone-space token that forces the model into an unusual state.<div class="missed"><label><input type="checkbox" data-q="q15"> missed this</label></div></div></details>
+
+  <details class="q" id="q16"><summary>What makes a special token special?</summary><div class="ans">It is a row that no user text can produce. Typing the marker characters gives ordinary pieces with different IDs, so message boundaries live in a channel content cannot write into.<div class="missed"><label><input type="checkbox" data-q="q16"> missed this</label></div></div></details>
+
+  <details class="q" id="q17"><summary>Who inserts special tokens, and when can a user forge one?</summary><div class="ans">The application or the provider's server, before the model runs. A user can forge one only if the application tokenises user text with special-token parsing enabled and does not strip the markers first.<div class="missed"><label><input type="checkbox" data-q="q17"> missed this</label></div></div></details>
+
+  <details class="q" id="q18"><summary>How does generation stop?</summary><div class="ans">The model produces the end-of-turn ID itself. The serving code sees it, ends the loop, and does not display it.<div class="missed"><label><input type="checkbox" data-q="q18"> missed this</label></div></div></details>
+
+  <details class="q" id="q19"><summary>Why can you not use <code>tiktoken</code> to estimate Claude costs?</summary><div class="ans">It is OpenAI's merge list. It undercounts Claude by roughly 15–20% on ordinary English and more on code and non-English text. Use the provider's own counting endpoint.<div class="missed"><label><input type="checkbox" data-q="q19"> missed this</label></div></div></details>
+
+  <details class="q" id="q20"><summary>Two tokenisers, one built on English news, one on Python source. Which gives fewer tokens for <code>def calculate_total(items):</code>?</summary><div class="ans">The one built on Python source. Its corpus contained <code>def</code>, <code>(</code>, <code>):</code> and identifier patterns often enough for them to earn rows. The news tokeniser splits the punctuation and identifier into many small pieces.<div class="missed"><label><input type="checkbox" data-q="q20"> missed this</label></div></div></details>
+</div>
+
+<h2 id="gaps">16 · What I got wrong on the first attempt</h2>
+
+<div class="note red">
+  <span class="lbl">Revision list — re-check these cold in week 11</span>
+  <b>1.</b> Believed the dictionary entry itself carries meaning. It does not — the ID is a primary key, and meaning is learned during model training.<br><br>
+  <b>2.</b> Believed the merge loop stops when counts drop. It stops after a fixed number of merges, decided in advance.<br><br>
+  <b>3.</b> Believed pieces let the tokeniser accept a small spelling mistake as the right word. It never corrects or approximates — <code>birdz</code> becomes <code>bird | z</code> and stays <code>birdz</code>.<br><br>
+  <b>4.</b> Could give only one of the two reasons non-English text costs more. The missing one was the merge list being learned from a mostly-English corpus.
+</div>
+
+<h3>Still open in Block 1</h3>
+<ul>
+  <li><b>The gate has not been run.</b> It requires counting tokens in a Tamil sentence and its English translation with a real tokeniser, then explaining the ratio.</li>
+  <li><b>Embeddings</b> — the second half of Block 1 — has not started. It comes after the neural network basics in Block 0.</li>
+</ul>
+
+<p class="foot">Block 1 · Part 1 · tokenisation complete 2026-09-21. Every number on this page was produced by a script in <code>code/block-01/</code> or read from the current API reference. Items marked “check this is current” move with model releases.</p>
+
+</div>
+
+<script>
+(function(){
+  var KEY = "tokenisation-missed-v1";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+
+  var boxes = document.querySelectorAll('.missed input[type="checkbox"]');
+  var score = document.getElementById("score");
+
+  function render(){
+    var n = 0;
+    boxes.forEach(function(box){ if (box.checked) n++; });
+    score.textContent = n === 0 ? "" : n + " marked to revise";
+  }
+
+  boxes.forEach(function(box){
+    var id = box.getAttribute("data-q");
+    if (state[id]) box.checked = true;
+    box.addEventListener("change", function(){
+      state[id] = box.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      render();
+    });
+  });
+
+  render();
+})();
+</script>

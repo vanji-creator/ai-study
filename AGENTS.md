@@ -5,6 +5,8 @@ understanding, not a collection of polished notes or a software deliverable.
 
 ## First action in every session
 
+0. Run `python3 review/review.py` and put the due cards to him cold. This is the
+   warm-up and it comes before any new teaching. See `CLAUDE.md` §12.
 1. Read `CLAUDE.md` in full. It is the teaching contract and source of truth.
 2. Read `PROGRESS.md` in full.
 3. Read `notes/block-NN.md` for the current block when it exists.

@@ -1,28 +1,34 @@
 # Progress
 
 ## Current
-Block: 1 — Text into numbers
+
+Block: 0 — How a model learns (inserted 2026-09-21), then Block 1 Part 2 — embeddings
 Started: 2026-09-16
-State: TOKENISATION FINISHED (2026-09-21), mini-check passed.
-Covered: tokeniser = text -> integer IDs from a fixed dictionary; why whole words and
-single letters both fail; pieces; BPE (count neighbouring pairs, merge the top one, fixed
-number of merges); applying an ordered merge list to unseen words; code points, utf-8 and
-why the 256 byte values are the safety net; why non-English costs more tokens (more bytes
-per character AND fewer merges learned for it); special tokens and who inserts them;
-OpenAI tokeniser public via tiktoken, Anthropic's is not (count_tokens endpoint,
-model-specific; tiktoken undercounts Claude by ~15-20%); trailing space (the space belongs
-to the word after it, so a trailing space leaves a rare lone-space token).
-Mini-check: 4 questions cold. 3 right first pass. Q3 (two reasons non-English costs more)
-needed a merge-list recap, then correct.
-NOT yet done in Block 1: the gate (Tamil vs English token count needs a real tokeniser),
-and the whole embeddings half.
-2026-09-22: re-taught Pipeline A with a nine-word corpus traced stage by stage
-(code/block-01/pipeline_a_traced.py), the merge budget as a queue ordered by frequency
-(code/block-01/cost_of_missing_merges.py: Tamil 83 tokens vs English 7 with an
-English-only tokeniser, 11.9x, worst case), and why the merge list must stay ordered.
-Next, agreed order: Block 0 (neural network basics) -> embeddings -> Block 1 gate.
-Block 0 beat 1 was already started: reranker latency example, weight as a parameter,
-squared error loss = 120 at weight 0.5. He has not yet computed loss at weight 0.2.
+
+Plan agreed 2026-09-22: finish the gaps in Blocks 0 and 1, consolidate both together with
+definitions, examples and cross-questions, then marinate for 2-3 days. Spaced repetition is
+now a standing rule — see CLAUDE.md §12.
+
+State:
+- Block 1 Part 1, tokenisation — FINISHED, mini-check passed cold 2026-09-21.
+  Pipeline A re-taught in depth 2026-09-22 after he asked for it again.
+- Block 0 — parameter, loss, gradient (sign and size), the update rule, learning rate and
+  its two failure modes, gradient descent. All taught with the reranker latency example
+  and run in code/block-00/.
+- Review system built 2026-09-22: review/review.py, review/cards.md (42 cards),
+  review/schedule.json. Scheduling verified by running a session and by REVIEW_TODAY.
+
+Remaining, in order:
+1. Block 0: a layer (matrix multiply + non-linearity, and why the non-linearity is
+   required), then backpropagation. Then the Block 0 gate.
+2. Block 1 Part 2: embeddings — cosine vs dot vs Euclidean by hand, why normalising makes
+   them equivalent, dimensionality, bi-encoder vs cross-encoder.
+3. Block 1 gate: Tamil vs English token count with tiktoken (to be installed).
+4. Consolidation: definitions + examples in one pass, cross-questions, then a cold written
+   test in notes/recall/blocks-0-1-1.md.
+
+Open check carried over, ask cold: why does a learning rate that is too large make the
+loss get worse rather than merely converge slowly?
 
 ## Completed
 

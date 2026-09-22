@@ -9,6 +9,8 @@ an interviewer.
 
 ## 0 · Read this first, every session
 
+0. Run `python3 review/review.py` and put the due cards to him, cold. This is
+   the warm-up. It is not optional and it comes before any new teaching.
 1. Read `PROGRESS.md` to find out where we are.
 2. Read the current block's note file under `notes/` if one exists.
 3. Ask one question: "Where do you want to start today?" Then start.
@@ -150,6 +152,17 @@ These exist because previous AI tutors lied to him confidently.
 ## 6 · The syllabus
 
 Nine fundamentals blocks, then system design. Each has a gate.
+
+### Block 0 · How a model learns
+Inserted 2026-09-21, after he identified the gap himself. Parameter, loss and why it is
+squared, gradient as direction and steepness, the update rule, the learning rate and both
+of its failure modes, gradient descent. Then: a layer as a matrix multiply plus one
+non-linear function, why the non-linearity is required, and backpropagation as the way to
+get every gradient in one backward sweep.
+
+**Gate:** Explain what the gradient of one parameter means, why the learning rate exists,
+and what backpropagation computes. Then say what changes and what does not when the model
+has 204 million parameters instead of one.
 
 ### Block 1 · Text into numbers
 Tokenisation: what a token is, BPE and pair merging, why Indic text costs 3–5×
@@ -347,8 +360,9 @@ that list is the revision plan for weeks 11 and 12.
 
 A session is 45 to 90 minutes. Rough shape:
 
-1. **Warm-up (5 min).** One question from a previous block, cold. Keeps old
-   material alive.
+1. **Warm-up (5–10 min).** Run `python3 review/review.py`. Ask him the due
+   cards cold, before anything new. Keeps old material alive, and the schedule
+   decides what to ask, not memory or mood.
 2. **Teach (30–60 min).** One sub-topic. Concrete example, prediction,
    derivation, diagram, code.
 3. **Gate or mini-check (10 min).** Either the block gate or a smaller check.
@@ -389,6 +403,40 @@ Twelve weeks. Study during office hours, projects after hours.
 | 11–12 | Full revision, every gate re-run cold | Question 10, mock interviews |
 
 DSA runs in parallel and is **not** part of this repository.
+
+---
+
+## 12 · Spaced repetition — the retention rule
+
+`PROGRESS.md` records what happened. It does not protect anything. The review system does.
+
+```
+review/cards.md       the questions and answers. Plain markdown, edit freely.
+review/schedule.json  when each card is next due. Committed, so it travels to the Mac.
+review/review.py      the runner. Standard library only, no installs.
+```
+
+**Leitner boxes.** Right answer moves a card one box up; wrong answer sends it to box 1
+however high it had climbed.
+
+```
+box 1  tomorrow      box 3  4 days      box 5  16 days
+box 2  2 days        box 4  8 days      box 6  32 days
+```
+
+Rules:
+
+1. **Run it first, every session.** `python3 review/review.py`. Ask the due cards cold.
+2. **A sub-topic is not finished until its cards are written.** Writing the notes is not
+   the end of a topic; adding cards is.
+3. **Cards are questions, never statements.** If it can be answered by recognising a
+   phrase, rewrite it.
+4. **Every gate failure and every wrong answer becomes a card**, at box 1.
+5. **Judge honestly at review time too.** A vague answer is a miss. Marking a miss as
+   "got it" is lying to the schedule, and the schedule is the only thing protecting his
+   memory.
+6. `--stats` shows what is due, `--block N` drills one block, `--all` ignores due dates
+   for a cold re-run of everything.
 
 ---
 

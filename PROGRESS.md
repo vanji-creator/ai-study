@@ -16,6 +16,10 @@ Mini-check: 4 questions cold. 3 right first pass. Q3 (two reasons non-English co
 needed a merge-list recap, then correct.
 NOT yet done in Block 1: the gate (Tamil vs English token count needs a real tokeniser),
 and the whole embeddings half.
+2026-09-22: re-taught Pipeline A with a nine-word corpus traced stage by stage
+(code/block-01/pipeline_a_traced.py), the merge budget as a queue ordered by frequency
+(code/block-01/cost_of_missing_merges.py: Tamil 83 tokens vs English 7 with an
+English-only tokeniser, 11.9x, worst case), and why the merge list must stay ordered.
 Next, agreed order: Block 0 (neural network basics) -> embeddings -> Block 1 gate.
 Block 0 beat 1 was already started: reranker latency example, weight as a parameter,
 squared error loss = 120 at weight 0.5. He has not yet computed loss at weight 0.2.
@@ -26,6 +30,11 @@ squared error loss = 120 at weight 0.5. He has not yet computed loss at weight 0
 |---|---|---|---|
 
 ## Weak spots to revisit
+- [ ] Pipeline A stage boundaries. On 2026-09-22 he could give the sequence but not the
+      numbering, merged A2/A3 wrongly, and omitted A5 (the output — merge list +
+      vocabulary, the only thing that survives). Hook taught: text, count, pieces, loop, keep.
+- [ ] Merge order. Thought a later merge would still apply if run early. It does not:
+      the ingredient piece does not exist yet, so the merge silently does nothing.
 - [ ] The merge list: where it comes from, that it is built once by counting before
       training, and that frequency in THAT corpus decides the vocabulary. Needed a
       recap on 2026-09-21. Re-check cold.
@@ -33,6 +42,9 @@ squared error loss = 120 at weight 0.5. He has not yet computed loss at weight 0
 - [ ] Thought BPE stops when counts drop — it stops after a fixed number of merges (vocabulary size). Re-check.
 
 ## Open questions
+- Unanswered check, ask at the start of the next session: a new special token is inserted
+  at ID 300, shifting every piece above it up by one, and the model is unchanged.
+  What does the user see? (Tests whether the vocabulary-as-contract point landed.)
 - Tamil suffix examples (வீடு / வீட்டில் / வீட்டுக்கு / வீட்டிலிருந்து) — Vikash to confirm they are correct
 
 ## Notes to tutor

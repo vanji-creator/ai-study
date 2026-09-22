@@ -139,6 +139,7 @@
     <li><a href="#real">Real tokenisers</a></li>
     <li><a href="#numbers">Numbers to memorise</a></li>
     <li><a href="#scripts">Scripts in this repo</a></li>
+    <li><a href="#deep">Pipeline A in depth</a></li>
     <li><a href="#quiz">Self-quiz, cold</a></li>
     <li><a href="#gaps">What I got wrong</a></li>
   </ol>
@@ -725,12 +726,157 @@ B:  "The capital of France is "      ->  … _is  _         next token: Paris   
   <tr><td><code>bytes_explained.py</code></td><td>Code points, UTF-8, the exact round trip, a single byte failing to decode</td></tr>
   <tr><td><code>space_belongs_to_the_word.py</code></td><td>Merges learning <code>_the</code> rather than <code>the</code></td></tr>
   <tr><td><code>tokeniser_pipeline.py</code></td><td>Both pipelines end to end, every stage printed</td></tr>
+  <tr><td><code>pipeline_a_traced.py</code></td><td>Pipeline A on nine words — every stage, every merge, the state after each</td></tr>
+  <tr><td><code>cost_of_missing_merges.py</code></td><td>What text with no merges costs: 83 tokens against 7</td></tr>
+  <tr><td><code>two_corpora_compared.py</code></td><td>English-trained against Python-trained tokeniser on the same text</td></tr>
 </table>
 </div>
 
 <p>All under <code>code/block-01/</code>. Change one number and re-run — that is what they are for.</p>
 
-<h2 id="quiz">15 · Self-quiz, cold</h2>
+<h2 id="deep">15 · Pipeline A in depth</h2>
+
+<p>Written after going through Pipeline A a second time. These are the points that only became clear on the second pass.</p>
+
+<h3>The five stages, and a hook</h3>
+<pre><code>A1   corpus                 a pile of text. nothing else.
+A2   pre-tokenise + count   cut into chunks at spaces, count the distinct ones
+A3   split into pieces      each distinct chunk becomes single bytes
+A4   the loop               count pairs, merge the top one, repeat until the budget ends
+A5   output                 ordered merge list + vocabulary. the corpus is thrown away.</code></pre>
+<p>Hook: <b>text, count, pieces, loop, keep.</b> A5 is the one most easily forgotten and the most important — A1 to A4 are work, A5 is the only stage whose output survives, and it is exactly what a tokeniser <i>is</i>.</p>
+
+<h3>The state the loop works on</h3>
+<p>After A2 the original text is gone. One table remains. For the corpus <code>'the cat sat on the mat the cat ran'</code>:</p>
+<pre><code>  chunk      pieces (this column changes)      count (never changes)
+  -------------------------------------------------------------------
+  _the       _  t  h  e                        3
+  _cat       _  c  a  t                        2
+  _sat       _  s  a  t                        1
+  _on        _  o  n                           1
+  _mat       _  m  a  t                        1
+  _ran       _  r  a  n                        1</code></pre>
+<p>Six rows, not nine. Keeping <code>_the</code> once with the number 3 is the same as keeping three copies, and far less work. A merge changes only the middle column; rows are never added or removed.</p>
+
+<h3>Where a pair's weight comes from</h3>
+<p>Nothing counts letters. A pair takes its weight from the row it sits in, so <code>c</code> + <code>at</code> inside a row marked x2 scores 2. A pair can also win by appearing in several rows: <code>a</code> + <code>t</code> scored 4 — once in <code>_cat</code> (x2), once in <code>_sat</code> (x1), once in <code>_mat</code> (x1) — beating every pair inside <code>_the</code>, whose row count is only 3.</p>
+
+<h3>Each merge creates pairs that could not exist before</h3>
+<pre><code>turn 1   a  + t   = 4     ->  new piece 'at'
+turn 2   _  + t   = 3     ->  new piece '_t'
+turn 3   _t + h   = 3     ->  new piece '_th'   &lt;- impossible before turn 2
+turn 4   _th + e  = 3     ->  new piece '_the'</code></pre>
+
+<h3>Why the order can never be rearranged</h3>
+<p>A merge joins two pieces that are neighbours <i>at that moment</i>. Run it before the merge that builds its ingredient and it matches nothing, silently.</p>
+<pre><code>correct order          '_the'  ->  ['_the']        1 token
+merge 4 moved first    '_the'  ->  ['_th', 'e']    2 tokens</code></pre>
+<p>No error is raised. The text is cut differently, and worse. That is why the merge list is an ordered list and not a set.</p>
+
+<h3>Which merges may be reordered</h3>
+<pre><code>   _the                              _cat
+     ^                                 ^
+   _th  +  e                         _c  +  at
+     ^                                 ^      ^
+   _t  +  h                          _ + c   a + t
+     ^
+   _  +  t</code></pre>
+<ul>
+  <li><b>Allowed:</b> <code>_cat</code> before <code>_the</code>. Different chains — frequency decides which chain is bought first.</li>
+  <li><b>Impossible:</b> <code>_cat</code> before <code>_c</code>. Same chain, ingredient missing.</li>
+</ul>
+<p>Training can never produce an invalid order, because a pair can only be counted once both its pieces exist. It appears only if someone rearranges the list by hand or a library writes it out wrongly.</p>
+
+<h3>The budget is a queue ordered by frequency</h3>
+<pre><code>merge 1   at      count 4
+merge 4   _the    count 3
+merge 6   _cat    count 2
+merge 8   _sat    count 1     &lt;- rarest, last</code></pre>
+<p>Nothing is excluded by nature. With a budget of 5 merges <code>_sat</code> never gets a row; with 14 it does. In a real tokeniser the budget is around 50,000 and the queue is millions long, so the budget always ends first. Everything below that line falls back to smaller pieces or raw bytes at runtime.</p>
+
+<div class="note red">
+  <span class="lbl">Measured — a tokeniser that saw no Tamil at all</span>
+<pre style="background:none;border:none;padding:0;margin:8px 0 0;"><code>english:  "hello how are you"            17 bytes  ->   7 tokens
+tamil:    "வணக்கம் எப்படி இருக்கிறீர்கள்"     83 bytes  ->  83 tokens
+          every token a raw byte — no merge applied to any of them
+
+ratio: 11.9x</code></pre>
+  <p style="margin:10px 0 0;">Worst case, not typical. Real models see some Tamil, so some pieces merge — which is why the usual figure is 3–5×.</p>
+</div>
+
+<h3>Why the vocabulary is needed when the merge list exists</h3>
+<pre><code>merge list   HOW do I cut this text?      -> pieces, which are strings
+vocabulary   WHAT NUMBER is this piece?   -> IDs, which are integers</code></pre>
+<p>The model cannot take strings. An ID is a <b>row number in the embedding table</b>, so the vocabulary is the agreement between the tokeniser and the model's first layer. Hand over 15 where the model learned 14 and it reads the wrong row, with no error anywhere. Decoding also needs the reverse direction, which the merge list cannot provide — it contains no IDs.</p>
+<p>For plain BPE the vocabulary is derivable from the merge list. It is stored explicitly anyway: special tokens were never merged from anything, re-deriving risks a silent mismatch, and not every tokeniser family has a merge list at all.</p>
+
+<h3>Why frequency is the right rule: a row is expensive</h3>
+<pre><code>vocab  50,000 × dimension 4,096  =    204,800,000 parameters    391 MB at fp16
+vocab 250,000 × dimension 4,096  =  1,024,000,000 parameters   1953 MB at fp16</code></pre>
+<p>A billion parameters before a single transformer layer exists. The vocabulary is a budget of scarce, expensive slots, and frequency decides what deserves one.</p>
+<ol>
+  <li><b>Every row gets enough training examples.</b> A row starts as random numbers and becomes meaningful only by being adjusted each time the model sees that token. A piece seen a million times gets a million adjustments; a piece seen four times stays near random.</li>
+  <li><b>Shorter sequences.</b> <code>_the</code> as one token instead of four is four times less work in every layer above, on the most common word in English.</li>
+  <li><b>Shared pieces generalise.</b> One well-trained <code>play</code> row serves <code>playing</code>, <code>player</code>, <code>plays</code>, <code>played</code>, <code>replay</code>.</li>
+</ol>
+
+<h3>Where frequency, as a proxy, fails</h3>
+<ul>
+  <li><b>Numbers.</b> <code>1024</code> may be one token while <code>1025</code> splits into three, so two similar quantities become structurally different inputs.</li>
+  <li><b>Rare names and identifiers.</b> They shatter into fragments that individually mean nothing.</li>
+</ul>
+<p>Both are tokenisation artefacts, not reasoning failures. This is why models miscount letters in a word.</p>
+
+<h3>Two different “trainings”, and two different corpora</h3>
+<pre><code>TRAINING THE TOKENISER   counting pairs in a corpus      (Pipeline A)
+TRAINING THE MODEL       adjusting billions of numbers   (gradient descent)
+
+ 1. collect a corpus
+ 2. PIPELINE A: count pairs, merge, repeat
+        -> merge list + vocabulary, FROZEN from this moment
+ 3. tokenise the model's training data using that frozen tokeniser
+ 4. TRAIN THE MODEL on those token IDs
+        weights change. embedding rows change. the merge list does not.
+ 5. INFERENCE: Pipeline B, replaying the same frozen merge list</code></pre>
+<p>The order never changes — not after model training, not at inference, not ever. The confusion comes from step 3: the model's training data passes <i>through</i> the tokeniser, so the tokeniser is present while the model trains. It is being used, not trained, exactly as at inference.</p>
+<pre><code>tokeniser corpus     counted once, then discarded   -> decides HOW MANY TOKENS text costs
+model training data  fed to the model repeatedly    -> decides HOW WELL the model handles it</code></pre>
+
+<h3>Why a fixed order from one corpus is still right to replay</h3>
+<p>At runtime the merge list is not a ranking of importance. It is a recipe for reproducing the same cutting used when the model's training data was tokenised.</p>
+<pre><code>correctness  =  the same merge list everywhere
+             NOT  the merge list matching the frequencies of the current input</code></pre>
+<p>Corpus frequency is the rule used to build the list because, when the corpus resembles real input, it minimises token count. When it does not, the penalty is cost, not correctness.</p>
+
+<div class="tablebox">
+<table>
+  <tr><th>Sample</th><th>English-trained</th><th>Python-trained</th></tr>
+  <tr><td>English prose</td><td class="num">14 tokens</td><td class="num">20 tokens</td></tr>
+  <tr><td>Python code</td><td class="num">31 tokens</td><td class="num">10 tokens</td></tr>
+</table>
+</div>
+<pre><code>the same python line, cut two ways:
+  english-trained:  d e f ' c' ou nt _ p a ir s ( w or d _ p i ec es, …   31 tokens
+  python-trained :  'def' ' count' '_pair' 's(' 'word' '_pieces' …        10 tokens
+
+both decode back to the original text: True, True</code></pre>
+<p>Neither tokeniser is wrong. The English-trained one handles Python perfectly correctly. It spends 31 tokens where 10 would do.</p>
+
+<h3>Lossless is not the same as harmless</h3>
+<pre><code>lossless   the bytes come back exactly. no information destroyed.   always true
+harmless   the model handles the text just as well.                 not guaranteed</code></pre>
+<ol>
+  <li><b>Cost and latency.</b> More tokens in, more out, less context window left.</li>
+  <li><b>Compute that grows faster than the token count.</b> Attention cost rises with the square of sequence length — to be derived in Block 2. Three times the tokens is more than three times the work in that part of the model.</li>
+  <li><b>Quality, indirectly.</b> Meaning must be rebuilt from fragments that carry almost nothing alone, and rare pieces have poorly trained rows.</li>
+</ol>
+<div class="note blue">
+  <span class="lbl">Honesty marker</span>
+  Point 3 is a real and widely observed effect but has <b>not</b> been measured in this repository — treat it as known in practice, not derived here. Points 1 and 2 are derivable, and point 2 will be derived in Block 2.
+</div>
+<p>What genuinely corrupts output is not a mismatched corpus but a tokeniser that does not match the model — a different merge list, or shifted IDs. Then the model receives words nobody typed, and nothing raises an error.</p>
+
+<h2 id="quiz">16 · Self-quiz, cold</h2>
 
 <div class="qhead">
   <p style="margin:0; color:var(--ink-soft); font-size:14.5px;">Answer out loud before opening each one. Tick the ones you missed; the count is kept in this browser.</p>
@@ -777,9 +923,19 @@ B:  "The capital of France is "      ->  … _is  _         next token: Paris   
   <details class="q" id="q19"><summary>Why can you not use <code>tiktoken</code> to estimate Claude costs?</summary><div class="ans">It is OpenAI's merge list. It undercounts Claude by roughly 15–20% on ordinary English and more on code and non-English text. Use the provider's own counting endpoint.<div class="missed"><label><input type="checkbox" data-q="q19"> missed this</label></div></div></details>
 
   <details class="q" id="q20"><summary>Two tokenisers, one built on English news, one on Python source. Which gives fewer tokens for <code>def calculate_total(items):</code>?</summary><div class="ans">The one built on Python source. Its corpus contained <code>def</code>, <code>(</code>, <code>):</code> and identifier patterns often enough for them to earn rows. The news tokeniser splits the punctuation and identifier into many small pieces.<div class="missed"><label><input type="checkbox" data-q="q20"> missed this</label></div></div></details>
+
+  <details class="q" id="q21"><summary>After A2, how many rows does the rest of Pipeline A work on, and what are the two columns?</summary><div class="ans">One row per <b>distinct</b> chunk — six for the nine-word corpus. Column one holds the pieces and changes with every merge; column two holds the count and never changes.<div class="missed"><label><input type="checkbox" data-q="q21"> missed this</label></div></div></details>
+
+  <details class="q" id="q22"><summary>Why can <code>_cat</code> come before <code>_the</code> in a merge list, but never before <code>_c</code>?</summary><div class="ans">Different chains may be ordered by frequency, so <code>_cat</code> before <code>_the</code> is valid. <code>_cat</code> is the pair <code>_c</code> + <code>at</code>, so it cannot precede its own ingredient — it would match nothing and be skipped.<div class="missed"><label><input type="checkbox" data-q="q22"> missed this</label></div></div></details>
+
+  <details class="q" id="q23"><summary>Does the merge list change after the model is trained?</summary><div class="ans">Never. It is frozen at the end of Pipeline A, used to tokenise the model's training data, and replayed unchanged at inference. A new merge list means a new tokeniser, which means the embedding rows no longer match and the model must be retrained.<div class="missed"><label><input type="checkbox" data-q="q23"> missed this</label></div></div></details>
+
+  <details class="q" id="q24"><summary>A tokeniser's corpus does not match the text a user sends. What is lost, and what is not?</summary><div class="ans">Nothing is lost — tokenisation stays lossless and the text decodes exactly. What is paid is cost: more tokens, more than proportionally more attention compute, less context window, and indirectly some quality because meaning must be rebuilt from fragments.<div class="missed"><label><input type="checkbox" data-q="q24"> missed this</label></div></div></details>
+
+  <details class="q" id="q25"><summary>Why is a vocabulary row expensive?</summary><div class="ans">Each row is a full vector in the embedding table. At vocabulary 50,000 and dimension 4,096 that table alone is 204.8M parameters, 391 MB at fp16. Rows are a scarce budget, and frequency decides what deserves one.<div class="missed"><label><input type="checkbox" data-q="q25"> missed this</label></div></div></details>
 </div>
 
-<h2 id="gaps">16 · What I got wrong on the first attempt</h2>
+<h2 id="gaps">17 · What I got wrong on the first attempt</h2>
 
 <div class="note red">
   <span class="lbl">Revision list — re-check these cold in week 11</span>

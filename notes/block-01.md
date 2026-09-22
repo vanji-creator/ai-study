@@ -207,3 +207,302 @@ why it could be learned first.
 - [ ] **Gate not run.** Needs a real tokeniser: count tokens in a Tamil sentence and its
       English translation, explain the ratio.
 - [ ] **Part 2 — embeddings** not started. Comes after Block 0.
+
+---
+
+# Session 2026-09-22 · Pipeline A, gone through again
+
+These are the points that came out of the questions asked during this session.
+Written plainly, for reading cold later.
+
+## The five stages, and a hook to remember them
+
+```
+A1   corpus                 a pile of text. nothing else.
+A2   pre-tokenise + count   cut into chunks at spaces, count the distinct ones
+A3   split into pieces      each distinct chunk becomes single bytes
+A4   the loop               count pairs, merge the top one, repeat until the budget ends
+A5   output                 ordered merge list + vocabulary. the corpus is thrown away.
+```
+
+Hook: **text, count, pieces, loop, keep.**
+
+A5 is the one most easily forgotten, and it is the most important. A1 to A4 are work.
+A5 is the only stage whose output survives, and it is exactly what a tokeniser *is*.
+
+## The state the loop works on
+
+After A2 the original text is gone. What remains is one table with two columns.
+For the corpus `'the cat sat on the mat the cat ran'`:
+
+```
+  chunk      pieces (this column changes)      count (this column never changes)
+  ------------------------------------------------------------------------------
+  _the       _  t  h  e                        3
+  _cat       _  c  a  t                        2
+  _sat       _  s  a  t                        1
+  _on        _  o  n                           1
+  _mat       _  m  a  t                        1
+  _ran       _  r  a  n                        1
+```
+
+Six rows, not nine. Keeping `_the` once with the number 3 is the same as keeping three
+copies of it, and it is far less work.
+
+A merge only changes the middle column. Rows are never added or removed, and the counts
+are never touched.
+
+## Where a pair's weight comes from
+
+Nothing counts letters. A pair takes its weight from the row it sits in. If `c` + `at`
+appears in a row marked x2, that pair scores 2.
+
+A pair can also win by appearing in several rows at once. In the corpus above, `a` + `t`
+scored 4 — once in `_cat` (x2), once in `_sat` (x1), once in `_mat` (x1) — and beat every
+pair inside `_the`, whose row count is only 3.
+
+## Each merge creates pairs that could not exist before
+
+```
+turn 1   a  + t   = 4     ->  new piece 'at'
+turn 2   _  + t   = 3     ->  new piece '_t'
+turn 3   _t + h   = 3     ->  new piece '_th'     <- this pair did not exist before turn 2
+turn 4   _th + e  = 3     ->  new piece '_the'
+```
+
+By turn 4, the most common word in the corpus is a single token, and nobody told the
+algorithm that `the` is a word.
+
+## Why the merge list must stay in order
+
+A merge joins two pieces that are next to each other **right now**. If a merge runs before
+the merge that builds its ingredient, it matches nothing and is silently skipped.
+
+```
+correct order          '_the'  ->  ['_the']        1 token
+merge 4 moved first    '_the'  ->  ['_th', 'e']    2 tokens
+```
+
+No error is raised. The text is simply cut differently, and worse.
+
+This is why the merge list is stored as an ordered list, not a set. The order is the
+information.
+
+## Which merges can be reordered, and which cannot
+
+Each merge depends only on the two pieces it joins.
+
+```
+   _the                              _cat
+     ^                                 ^
+   _th  +  e                         _c  +  at
+     ^                                 ^      ^
+   _t  +  h                          _ + c   a + t
+     ^
+   _  +  t
+```
+
+- **Allowed:** `_cat` before `_the`. They are different chains. Frequency decides which
+  chain is bought first — if `cat` were more common than `the`, that order would be
+  perfectly normal.
+- **Impossible:** `_cat` before `_c`. Same chain, ingredient missing.
+
+Training can never produce an invalid order, because a pair can only be counted once both
+of its pieces already exist. An invalid order can only appear if someone rearranges the
+list by hand or a library writes it out wrongly.
+
+## The budget is a queue ordered by frequency
+
+Nothing is excluded by nature. Things are simply bought in order of frequency until the
+budget runs out. On the nine-word corpus:
+
+```
+merge 1   at      count 4
+merge 4   _the    count 3
+merge 6   _cat    count 2
+merge 8   _sat    count 1     <- rarest, last
+```
+
+With a budget of 5 merges, `_sat` never gets a row. With a budget of 14, it does.
+
+In a real tokeniser the budget is around 50,000 and the queue is millions long, so the
+budget always runs out first. Everything below that line — rare words, names, typos, most
+pieces of other scripts — has no row and falls back to smaller pieces or single bytes at
+runtime.
+
+## What that costs, measured
+
+Our tokeniser trained only on `CLAUDE.md`, which contains no Tamil:
+
+```
+english:  "hello how are you"                     17 bytes  ->   7 tokens
+tamil:    "வணக்கம் எப்படி இருக்கிறீர்கள்"              83 bytes  ->  83 tokens
+          every single token was a raw byte; no merge applied to any of them
+
+ratio: 11.9x
+```
+
+That is the worst case, because this tokeniser saw zero Tamil. Real models see some, so
+some pieces do get merged, which is why the usual figure is 3–5x.
+
+## Why we need the vocabulary when we already have the merge list
+
+They answer two different questions.
+
+```
+merge list   HOW do I cut this text?      -> gives pieces, which are strings
+vocabulary   WHAT NUMBER is this piece?   -> gives IDs, which are integers
+```
+
+The model cannot take strings. The ID is a **row number in the embedding table**, so the
+vocabulary is the agreement between the tokeniser and the model's first layer. If the
+tokeniser hands over 15 where the model learned 14, the model reads the wrong row and no
+error is raised anywhere.
+
+Decoding needs the vocabulary in reverse (ID → piece). The merge list cannot do that at
+all; it contains no IDs.
+
+For plain BPE the vocabulary *is* derivable from the merge list — 256 byte rows, then one
+row per merge in order. It is stored explicitly anyway, because special tokens were never
+merged from anything and exist only in the vocabulary, because re-deriving it risks a
+silent mismatch, and because not every tokeniser family has a merge list at all.
+
+## Why a frequent split helps the model: a row is expensive
+
+Every row is one full vector in the embedding table.
+
+```
+vocab  50,000 × dimension 4,096  =    204,800,000 parameters    391 MB at fp16
+vocab 250,000 × dimension 4,096  =  1,024,000,000 parameters   1953 MB at fp16
+```
+
+A billion parameters before a single transformer layer exists. The vocabulary is a budget
+of scarce, expensive slots, and frequency is how you decide what deserves one.
+
+Three benefits:
+
+1. **Every row gets enough training examples.** A row starts as random numbers and only
+   becomes meaningful by being adjusted each time the model sees that token. A piece seen
+   a million times gets a million adjustments; a piece seen four times stays near random.
+2. **Shorter sequences.** `_the` as one token instead of four is four times less work in
+   every layer above, on the most common word in English.
+3. **Shared pieces generalise.** One well-trained `play` row serves `playing`, `player`,
+   `plays`, `played`, `replay`.
+
+## Where frequency, as a proxy, fails
+
+Frequency has no idea what a meaningful unit is.
+
+- **Numbers.** `1024` may be one token while `1025` splits into three. Two similar
+  quantities become structurally different inputs.
+- **Rare names and identifiers.** They shatter into fragments that individually mean
+  nothing, and the model must reassemble them.
+
+These are tokenisation artefacts, not reasoning failures. It is why models miscount
+letters in a word.
+
+## Two different "trainings", and two different corpora
+
+This was the main confusion of the session.
+
+```
+TRAINING THE TOKENISER   counting pairs in a corpus         (Pipeline A)
+TRAINING THE MODEL       adjusting billions of numbers      (gradient descent)
+```
+
+The timeline:
+
+```
+ 1. collect a corpus
+ 2. PIPELINE A: count pairs, merge, repeat
+        -> merge list + vocabulary, FROZEN from this moment
+ 3. tokenise the model's training data using that frozen tokeniser
+ 4. TRAIN THE MODEL on those token IDs
+        weights change. embedding rows change. the merge list does not.
+ 5. INFERENCE: Pipeline B, replaying the same frozen merge list
+```
+
+The merge list order never changes — not after model training, not at inference, not ever.
+
+The confusion comes from step 3: the model's training data passes **through** the
+tokeniser, so the tokeniser is present during model training. It is being used, not
+trained, exactly as at inference.
+
+The two corpora also have separate roles, even when drawn from the same pile of text:
+
+```
+tokeniser corpus     counted once, then discarded   -> decides HOW MANY TOKENS text costs
+model training data  fed to the model repeatedly    -> decides HOW WELL the model handles it
+```
+
+## Why a fixed order from one corpus is still the right thing to replay
+
+At runtime the merge list is not a ranking of importance. It is a recipe for reproducing
+**the same cutting that was used when the model's training data was tokenised**.
+
+```
+correctness  =  the same merge list is used everywhere
+             NOT  the merge list matches the frequencies of the current input
+```
+
+Corpus frequency is the rule used to build that list because, when the corpus resembles
+the real input, it minimises token count. When it does not resemble the input, the penalty
+is cost, not correctness.
+
+### Measured: same algorithm, same budget, two corpora
+
+```
+sample            english-trained   python-trained
+english prose          14 tok            20 tok
+python code            31 tok            10 tok
+
+the same python line, cut two ways:
+  english-trained:  d e f ' c' ou nt _ p a ir s ( w or d _ p i ec es, …    31 tokens
+  python-trained :  'def' ' count' '_pair' 's(' 'word' '_pieces' …         10 tokens
+
+both decode back to the original text: True, True
+```
+
+Neither tokeniser is wrong. The English-trained one handles Python perfectly correctly.
+It just spends 31 tokens where 10 would do.
+
+## Lossless is not the same as harmless
+
+An important correction to a statement that was too clean.
+
+```
+lossless   the bytes come back exactly. no information is destroyed.   always true
+harmless   the model handles the text just as well.                    not guaranteed
+```
+
+A mismatched corpus causes three things, and only the first is purely money:
+
+1. **Cost and latency.** More tokens in, more tokens out, less context window left.
+2. **Compute that grows faster than the token count.** Attention cost rises with the
+   square of sequence length (to be derived in Block 2). Three times the tokens is more
+   than three times the work in that part of the model.
+3. **Quality, indirectly.** Meaning has to be rebuilt from fragments that carry almost
+   nothing on their own, and rare pieces have poorly trained rows.
+
+Point 3 is a real and widely observed effect, but it has **not** been measured in this
+repository. Treat it as "known in practice, not derived here". Points 1 and 2 are
+derivable, and point 2 will be derived in Block 2.
+
+What genuinely corrupts output is not a mismatched corpus but a tokeniser that does not
+match the model — a different merge list, or shifted IDs. In that case the model receives
+words nobody typed, and nothing raises an error.
+
+## Scripts written this session
+
+| Script | What it shows |
+|---|---|
+| `code/block-01/pipeline_a_traced.py` | Pipeline A on nine words, every stage and every merge printed |
+| `code/block-01/cost_of_missing_merges.py` | What unmerged text costs: Tamil 83 tokens vs English 7 |
+| `code/block-01/two_corpora_compared.py` | English-trained vs Python-trained tokeniser on the same text |
+
+## Still open
+
+- [ ] Unanswered check: a new special token is inserted at ID 300, shifting every piece
+      above it up by one, and the model is unchanged. What does the user see?
+- [ ] The Block 1 gate: Tamil and English token counts with a real tokeniser.
+- [ ] Embeddings, after Block 0.

@@ -283,3 +283,106 @@ block: 0
 Q: An embedding row starts as random numbers. What makes it meaningful?
 A: Being adjusted each time the model sees that token in training. A piece seen a million
    times gets a million adjustments; a piece seen four times stays close to random.
+
+### id: nn-013
+block: 0
+Q: Draw the loss curve for one parameter. What is on each axis, what shape is it, and what
+   does training mean on that picture?
+A: Weight across the bottom, loss up the side. A valley, lowest at the correct weight.
+   Training means walking to the bottom while never being allowed to see the picture — the
+   model only knows the one spot it is standing on.
+
+### id: nn-014
+block: 0
+Q: What is the gradient, described using the loss curve rather than a formula?
+A: The tilt of the ground at the one spot you are standing on, as a single number. Its sign
+   says which way the ground slopes; its size says how steep. At weight 5 the tilt was 16,
+   at the bottom it was 0.
+
+### id: nn-015
+block: 0
+Q: Two learning rates, 0.000333 and 0.000334, on the same problem. One converges, one
+   explodes. What single quantity decides it?
+A: The multiplier 1 - (2 x sum of squared inputs) x learning_rate. While its size is under
+   1 the distance from the answer shrinks each step; over 1 it grows. Because the inputs
+   set that number, the safe learning rate depends on the scale of the input data — which
+   is why inputs are normalised and learning rates are tuned, not derived.
+
+### id: nn-016
+block: 0
+Q: With two parameters instead of one, what exactly is "the gradient"?
+A: Not one number — one per parameter. Standing at a point you ask two separate questions:
+   if I move only the weight, which way and how steeply does the loss go? And the same for
+   the bias. The gradient is the pair of answers, one tilt per direction you could move in.
+
+### id: nn-017
+block: 0
+Q: Where does `actual` come from, and what is the loop called that has it?
+A: Somebody supplies it — a measurement made before training. Those supplied answers are
+   labels, and learning from them is supervised learning. No labels, no error, no gradient.
+   A language model gets its labels free: the actual is the next token in the text.
+
+### id: nn-018
+block: 0
+Q: What is the difference between training and inference, stated in terms of `actual`?
+A: During training an actual exists for every row, so an error and a gradient exist and the
+   parameters change. At inference there is no actual — that is why you are asking — so no
+   error, no gradient, and the parameters are frozen.
+
+### id: nn-019
+block: 0
+Q: Why is the bias's gradient `2 x (1 x error)` while the weight's is `2 x (input x error)`?
+A: The factor is how far the prediction moves when that parameter moves by 1. The weight is
+   multiplied by the input, so its influence is the input. The bias is only added, so its
+   influence is 1 whatever the input. The bias is a weight whose input is always 1.
+
+### id: nn-020
+block: 0
+Q: You chain two weight-and-bias stages with nothing between them. What do you get, and why?
+A: A straight line — exactly what one stage gives. Substituting collapses it to
+   ((weight2 x weight1) x input) + ((weight2 x bias1) + bias2), two numbers. Any number of
+   such stages equals one of them, because multiplying and adding cannot produce anything
+   else. Adding parameters this way buys nothing.
+
+### id: nn-021
+block: 0
+Q: State the ReLU rule, and say what it produces when placed between two stages.
+A: If the value is negative it becomes 0, otherwise it is left alone. It breaks the collapse:
+   the output becomes straight pieces joined at bends, so the gaps between predictions stop
+   being constant. One ReLU gives one bend; enough bends trace any curve.
+
+### id: nn-022
+block: 0
+Q: Why does the field use one simple non-linear rule everywhere instead of picking the right
+   curve for each problem, like input squared?
+A: Picking input squared requires already knowing the answer's shape. Real data does not tell
+   you, and with several inputs you would also have to guess how they combine. Many learned
+   bends need only data.
+
+### id: nn-023
+block: 0
+Q: What decides WHERE a ReLU bend sits?
+A: The bias feeding it. With weight1 = 1 and bias1 = -2 the bend is at input 2. Change the
+   bias and the bend moves, so the position of every bend is an ordinary learned parameter.
+
+### id: nn-024
+block: 0
+Q: A layer's hidden values are all positive for your data. What has the ReLU done?
+A: Nothing. It only bends the function where it actually blocks a negative value, so for
+   that data the layer is still a plain straight line.
+
+### id: nn-025
+block: 0
+Q: Updating after every single row instead of adding rows together — is that wrong, and does
+   it have a name?
+A: Not wrong. It is stochastic gradient descent, and it is what real models use, because
+   billions of rows cannot be added up before one step. It reaches the same place by a
+   wandering path rather than a straight one.
+
+### id: nn-026
+block: 0
+Q: Is the loss the SUM of the squared errors or the AVERAGE? What turns on the answer?
+A: Either — it is a convention, not a law. Dividing by the number of rows makes every
+   gradient that many times smaller, and the learning rate cancels it exactly; the direction
+   never changes. People divide so the learning rate keeps working when the number of rows
+   per step changes.

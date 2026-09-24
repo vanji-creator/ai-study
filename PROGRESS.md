@@ -186,6 +186,23 @@ Quote these; they were run, not estimated.
 
 ## Notes to tutor
 
+- **One row at a time. His explicit rule, given 2026-09-24.** Teach gradient descent with a
+  single measurement per update — stochastic gradient descent — never a summed or averaged
+  batch. He said: *"i always want to follow stochastic gradient descent only here because am
+  not able to fit many probs in my context(brain)"*. Summing two rows made him lose the
+  thread. One input, one error, one gradient per parameter, one update, next row.
+- **Do not widen.** On 2026-09-24 he objected that once bias arrived the teaching "became
+  bad" — too many assumptions about what he already held, and jumps to large problems.
+  Named specifics to avoid unless he asks: parameter counts in the millions, embedding
+  tables, optimiser names, loss surfaces with several rows at once.
+- **Do not improve an explanation he already accepted.** He noticed the squared-error
+  explanation had changed and preferred the earlier two-reason version (signs cannot cancel;
+  large errors count more). Adding a third reason cost him the first two. When a sub-topic
+  has landed, repeat it in the same words.
+- **Bracket every group in a formula.** His request, 2026-09-24. Write
+  `new weight = weight - (learning rate x gradient for weight)` and
+  `predicted = (weight x input) + bias`, not the unbracketed forms. Brackets show what is
+  computed first, which is where his arithmetic slips happen.
 - **Teaching that works with him:** one small step per message, a question after each step,
   a Python dict or a table he can read, and letting him find the rule himself. Session 1
   failed because it was too dense — several beats per message — and he asked to rewind

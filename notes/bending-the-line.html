@@ -1,0 +1,776 @@
+<title>Bending The Line</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg:        #F1F3F6;
+    --surface:   #FFFFFF;
+    --ink:       #182129;
+    --ink-soft:  #56646F;
+    --ink-faint: #8A96A0;
+    --rule:      #D8DEE4;
+    --grid:      #E3E8ED;
+    --curve:     #182129;
+    --target:    #A93C22;
+    --target-bg: rgba(169, 60, 34, 0.10);
+    --floor:     rgba(138, 150, 160, 0.16);
+    --good:      #2F6B4F;
+    --bad:       #A93C22;
+    --chip:      #EAEEF2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #0F151B;
+      --surface:   #161E26;
+      --ink:       #E6EBEF;
+      --ink-soft:  #9DAAB5;
+      --ink-faint: #6B7883;
+      --rule:      #263140;
+      --grid:      #1E2831;
+      --curve:     #E6EBEF;
+      --target:    #E8896C;
+      --target-bg: rgba(232, 137, 108, 0.14);
+      --floor:     rgba(157, 170, 181, 0.13);
+      --good:      #79C39C;
+      --bad:       #E8896C;
+      --chip:      #1D2831;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #0F151B;
+    --surface:   #161E26;
+    --ink:       #E6EBEF;
+    --ink-soft:  #9DAAB5;
+    --ink-faint: #6B7883;
+    --rule:      #263140;
+    --grid:      #1E2831;
+    --curve:     #E6EBEF;
+    --target:    #E8896C;
+    --target-bg: rgba(232, 137, 108, 0.14);
+    --floor:     rgba(157, 170, 181, 0.13);
+    --good:      #79C39C;
+    --bad:       #E8896C;
+    --chip:      #1D2831;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 3rem 5rem;
+  }
+
+  h1 {
+    font-family: "IBM Plex Serif", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.9rem, 6vw, 2.6rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 0.6rem;
+  }
+  .standfirst {
+    font-family: "IBM Plex Serif", Georgia, serif;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin: 0 0 0.5rem;
+    max-width: 34rem;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.75rem;
+  }
+  h2 {
+    font-family: "IBM Plex Serif", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.45rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 0.6rem;
+  }
+  p { margin: 0 0 1rem; max-width: 36rem; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  section {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 2rem;
+  }
+  section.lead { border-top: none; padding-top: 0; margin-top: 2.5rem; }
+
+  /* ---- the instrument ---- */
+  .lab {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    margin: 1.75rem 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .lab-plot { padding: 1rem 1rem 0.25rem; }
+  .lab svg { display: block; width: 100%; height: auto; max-width: 100%; }
+
+  .knobs {
+    display: grid;
+    gap: 0.9rem 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    padding: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+  .knob label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.83rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+  }
+  .knob .val {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.83rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--ink);
+    margin: 0;
+  }
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--target);
+    outline-offset: 3px;
+  }
+
+  .verdict {
+    border-top: 1px solid var(--rule);
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+  .verdict .head {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+  }
+  .verdict .miss { color: var(--bad); }
+  .verdict .hit  { color: var(--good); }
+  .verdict .note { flex-basis: 100%; color: var(--ink-faint); }
+
+  .actions {
+    border-top: 1px solid var(--rule);
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  button {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 0.83rem;
+    color: var(--ink);
+    background: var(--chip);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--ink-faint); }
+  button:focus-visible { outline: 2px solid var(--target); outline-offset: 2px; }
+
+  .callout {
+    background: var(--target-bg);
+    border-left: 2px solid var(--target);
+    padding: 0.9rem 1.1rem;
+    margin: 1.5rem 0;
+  }
+  .callout p { margin: 0; max-width: none; }
+
+  .plain {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    line-height: 1.75;
+    background: var(--chip);
+    border: 1px solid var(--rule);
+    padding: 0.9rem 1.1rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  figcaption {
+    font-size: 0.83rem;
+    color: var(--ink-faint);
+    margin-top: 0.6rem;
+    max-width: 34rem;
+  }
+  figure { margin: 1.75rem 0; }
+
+  footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="page">
+
+  <p class="eyebrow">Block 0 · how a model learns</p>
+  <h1>Bending the line</h1>
+  <p class="standfirst">A model is a curve you are allowed to reshape. Everything about
+  layers and non-linear rules is a question about which shapes are available to you — not
+  about arithmetic.</p>
+
+  <section class="lead">
+    <h2>The goal, with nothing else in it</h2>
+    <p>Three dots. They came from measurement: you put in 1, 2 and 3, and got back 1, 4
+    and 9. You did not choose these numbers and you cannot change them.</p>
+    <p>A model is <strong>a curve drawn on the same page as the dots</strong>. Its
+    parameters are knobs that change the curve's shape. Training is turning the knobs
+    until the curve passes through every dot.</p>
+    <p>That is the whole job. If a shape that touches all three dots is not available to
+    your curve, no amount of turning helps — and that is the only thing that goes wrong
+    in this page.</p>
+
+    <figure>
+      <div class="lab">
+        <div class="lab-plot" id="plot-dots"></div>
+      </div>
+      <figcaption>The three measurements. Nothing is drawn through them yet.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">One stage · two knobs</p>
+    <h2>Two knobs give you a line, and only a line</h2>
+    <p>The first model has two parameters. Here is what each one actually does to the
+    picture:</p>
+    <div class="plain">weight  →  tilts the line
+bias    →  slides the line up and down</div>
+    <p>Turn them both. Try to touch all three dots.</p>
+
+    <div class="lab">
+      <div class="lab-plot" id="plot-one"></div>
+      <div class="knobs" id="knobs-one"></div>
+      <div class="verdict" id="verdict-one"></div>
+      <div class="actions">
+        <button type="button" id="best-one">Set it to the best-fitting line</button>
+      </div>
+    </div>
+
+    <p>You cannot do it, and you will not do it by trying harder. Tilt and height are the
+    only two things you control, and <strong>no combination of them puts a bend in a
+    straight line.</strong> Press the button above: the best-fitting line misses all three
+    dots at once, and every dot it touches costs you another.</p>
+
+    <p>Here is the proof, without any calculation. Get the line to pass through the first
+    two dots exactly — that is possible, and there is only one line that does it. Now look
+    at the third dot. The line arrives at 7 where the measurement says 9. To reach 9 the
+    line would have to be lifted by 2, which drags it off both of the dots it had. One
+    height cannot be two heights.</p>
+
+    <div class="callout">
+      <p>This is the important distinction: the model is not <em>inaccurate</em> here. The
+      shape it needs is not in the set of shapes it can draw at all.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Two stages · four knobs</p>
+    <h2>Four knobs, and still only a line</h2>
+    <p>The obvious repair is more parameters. Take the output of one weight-and-bias and
+    feed it into a second one — two stages instead of one, four knobs instead of two.</p>
+    <p>Move all four. Watch the shape, not the numbers.</p>
+
+    <div class="lab">
+      <div class="lab-plot" id="plot-two"></div>
+      <div class="knobs" id="knobs-two"></div>
+      <div class="verdict" id="verdict-two"></div>
+      <div class="actions">
+        <button type="button" id="shuffle-two">Try a random setting of all four</button>
+      </div>
+    </div>
+
+    <p>Press the random button as many times as you like. It is always a straight line.</p>
+    <p>The readout tells you why: whatever the four knobs are, there is always a
+    <em>single</em> tilt-and-height setting that draws exactly the same line. The second
+    stage simply re-tilts and re-slides what the first stage handed it, and a re-tilted,
+    re-slid straight line is a straight line.</p>
+
+    <div class="callout">
+      <p><strong>You added knobs but you did not add shapes.</strong> That is what people
+      mean when they say a stack of linear layers collapses into one. It is not a statement
+      about algebra — it is a statement about the set of pictures available to you, and
+      that set did not grow.</p>
+    </div>
+
+    <p>This is also the answer to the question "do we need another dimension?" The
+    dimension that matters is not on the page. It is <strong>how many genuinely different
+    shapes the knobs can reach.</strong> Going from two knobs to four moved you from a set
+    of straight lines to the same set of straight lines.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">The floor</p>
+    <h2>One rule, and the line can bend</h2>
+    <p>Put a floor between the two stages. The rule is complete in one sentence:</p>
+    <div class="plain">if the value is negative, it becomes zero
+otherwise, leave it alone</div>
+    <p>The shaded band below is that floor. The line runs along it — pinned flat, because
+    everything trying to go below zero is held at zero — and then, at one point, it leaves
+    the floor and climbs.</p>
+    <p><strong>That point is a bend.</strong> And where it sits is a knob you did not have
+    before.</p>
+
+    <div class="lab">
+      <div class="lab-plot" id="plot-relu"></div>
+      <div class="knobs" id="knobs-relu"></div>
+      <div class="verdict" id="verdict-relu"></div>
+    </div>
+
+    <p>Slide the bend left and right. The flat stretch grows and shrinks; the climb starts
+    earlier or later. Neither of those was possible with any of the four knobs in the
+    previous section.</p>
+    <p>One more thing worth noticing: slide the bend all the way to the left, past the
+    first dot. The line goes straight again. The floor only changes the shape where it is
+    actually holding something back — <strong>a layer whose values never go negative is,
+    for that data, still a plain straight line.</strong></p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Three bends</p>
+    <h2>Enough bends fit anything</h2>
+    <p>One bend is not enough for three dots. So use three, each with its own bend
+    position and its own steepness, added together.</p>
+    <p>Each slider below controls how steeply one of the three pieces climbs after its
+    bend. Move them and try to hit all three dots. Then press the button.</p>
+
+    <div class="lab">
+      <div class="lab-plot" id="plot-many"></div>
+      <div class="knobs" id="knobs-many"></div>
+      <div class="verdict" id="verdict-many"></div>
+      <div class="actions">
+        <button type="button" id="solve-many">Fit all three dots</button>
+        <button type="button" id="reset-many">Back to flat</button>
+      </div>
+    </div>
+
+    <p>Exact. Every dot touched.</p>
+    <p>And notice what nobody had to know. The dots are 1, 4, 9 — they are squares. You
+    could have spotted that and written the curve down by hand. But this fit never used
+    that fact. It used three bends whose positions and steepnesses are ordinary numbers,
+    found the same way the weight and the bias were found: by nudging them downhill.</p>
+
+    <div class="callout">
+      <p>That is the trade the field made. <strong>Rather than guess the right curve for
+      each problem, use many bends and let the data place them.</strong> Guessing the
+      curve needs you to already know the answer. Bends need only measurements.</p>
+    </div>
+
+    <p>A curve made of enough straight pieces is indistinguishable from a smooth one —
+    the same way a polygon with enough sides is indistinguishable from a circle. Real
+    layers have thousands of these pieces rather than three.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">In one page</p>
+    <h2>What to carry away</h2>
+    <div class="plain">the goal      draw a curve through the dots
+a parameter   a knob that changes the curve's shape
+training      turning the knobs until the curve touches the dots
+
+two knobs     tilt and height. straight lines only.
+four knobs    tilt and height. still straight lines only. nothing gained.
+the floor     negatives become zero. this puts a bend in the line.
+the bend      its position is a knob. that knob is new.
+many bends    any shape, without anyone knowing what the shape was.</div>
+    <p>No equations were needed for any line of that. The arithmetic you worked by hand
+    is how a machine finds good values for those knobs — it is not what the knobs
+    <em>are</em>.</p>
+  </section>
+
+  <footer>
+    Built for the ai-study repository, Block 0. The three measurements, the floor rule and
+    the three-bend fit on this page are the same ones in
+    <span style="font-family:'IBM Plex Mono',monospace">code/block-00/why_non_linearity.py</span>,
+    where they are printed by running code rather than drawn.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA_INPUTS  = [1, 2, 3];
+  var DATA_ACTUALS = [1, 4, 9];
+
+  var X_MIN = -0.2, X_MAX = 4.0;
+  var Y_MIN = -2.0, Y_MAX = 14.0;
+
+  var W = 560, H = 360;
+  var PAD_L = 42, PAD_R = 14, PAD_T = 14, PAD_B = 34;
+
+  function xToPixel(x) {
+    return PAD_L + (x - X_MIN) / (X_MAX - X_MIN) * (W - PAD_L - PAD_R);
+  }
+  function yToPixel(y) {
+    return H - PAD_B - (y - Y_MIN) / (Y_MAX - Y_MIN) * (H - PAD_T - PAD_B);
+  }
+
+  function element(name, attributes) {
+    var node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (var key in attributes) {
+      if (Object.prototype.hasOwnProperty.call(attributes, key)) {
+        node.setAttribute(key, attributes[key]);
+      }
+    }
+    return node;
+  }
+
+  // Builds one plot. Returns an object with update(curveFunction, options).
+  function makePlot(containerId, label) {
+    var container = document.getElementById(containerId);
+    if (!container) { return null; }
+
+    var svg = element("svg", {
+      viewBox: "0 0 " + W + " " + H,
+      role: "img",
+      "aria-label": label
+    });
+
+    // floor band, drawn first so everything sits on top of it
+    var floorBand = element("rect", {
+      x: xToPixel(X_MIN), y: yToPixel(0),
+      width: xToPixel(X_MAX) - xToPixel(X_MIN),
+      height: yToPixel(Y_MIN) - yToPixel(0),
+      fill: "var(--floor)"
+    });
+    floorBand.style.display = "none";
+    svg.appendChild(floorBand);
+
+    // grid
+    var gridGroup = element("g", { stroke: "var(--grid)", "stroke-width": "1", fill: "none" });
+    for (var gx = 0; gx <= 4; gx += 1) {
+      gridGroup.appendChild(element("line", {
+        x1: xToPixel(gx), y1: yToPixel(Y_MIN), x2: xToPixel(gx), y2: yToPixel(Y_MAX)
+      }));
+    }
+    for (var gy = -2; gy <= 14; gy += 2) {
+      gridGroup.appendChild(element("line", {
+        x1: xToPixel(X_MIN), y1: yToPixel(gy), x2: xToPixel(X_MAX), y2: yToPixel(gy)
+      }));
+    }
+    svg.appendChild(gridGroup);
+
+    // zero line, a shade stronger than the grid
+    svg.appendChild(element("line", {
+      x1: xToPixel(X_MIN), y1: yToPixel(0), x2: xToPixel(X_MAX), y2: yToPixel(0),
+      stroke: "var(--rule)", "stroke-width": "1.5"
+    }));
+
+    // axis labels
+    var labelGroup = element("g", {
+      fill: "var(--ink-faint)",
+      "font-family": "IBM Plex Mono, ui-monospace, monospace",
+      "font-size": "11"
+    });
+    for (var tx = 0; tx <= 4; tx += 1) {
+      labelGroup.appendChild(Object.assign(
+        element("text", { x: xToPixel(tx), y: H - PAD_B + 16, "text-anchor": "middle" }),
+        { textContent: String(tx) }));
+    }
+    for (var ty = -2; ty <= 14; ty += 2) {
+      labelGroup.appendChild(Object.assign(
+        element("text", { x: PAD_L - 8, y: yToPixel(ty) + 4, "text-anchor": "end" }),
+        { textContent: String(ty) }));
+    }
+    labelGroup.appendChild(Object.assign(
+      element("text", { x: xToPixel(X_MAX), y: H - PAD_B + 16, "text-anchor": "end" }),
+      { textContent: "input" }));
+    labelGroup.appendChild(Object.assign(
+      element("text", { x: PAD_L - 8, y: PAD_T + 10, "text-anchor": "end" }),
+      { textContent: "out" }));
+    svg.appendChild(labelGroup);
+
+    // the curve
+    var curve = element("polyline", {
+      fill: "none", stroke: "var(--curve)", "stroke-width": "2",
+      "stroke-linejoin": "round", "stroke-linecap": "round"
+    });
+    svg.appendChild(curve);
+
+    // vertical drop lines from each dot to the curve, so a miss is visible as a gap
+    var missGroup = element("g", {
+      stroke: "var(--target)", "stroke-width": "1.5", "stroke-dasharray": "3 3"
+    });
+    var missLines = DATA_INPUTS.map(function () {
+      var line = element("line", {});
+      missGroup.appendChild(line);
+      return line;
+    });
+    svg.appendChild(missGroup);
+
+    // the three measurements
+    var dotGroup = element("g", {});
+    DATA_INPUTS.forEach(function (input, index) {
+      dotGroup.appendChild(element("circle", {
+        cx: xToPixel(input), cy: yToPixel(DATA_ACTUALS[index]), r: "5",
+        fill: "var(--target)"
+      }));
+    });
+    svg.appendChild(dotGroup);
+
+    container.appendChild(svg);
+
+    return {
+      update: function (curveFunction, options) {
+        options = options || {};
+        floorBand.style.display = options.showFloor ? "" : "none";
+
+        var points = [];
+        var steps = 240;
+        for (var step = 0; step <= steps; step += 1) {
+          var x = X_MIN + (X_MAX - X_MIN) * step / steps;
+          var y = curveFunction(x);
+          if (!isFinite(y)) { continue; }
+          y = Math.max(Y_MIN - 5, Math.min(Y_MAX + 5, y));
+          points.push(xToPixel(x).toFixed(1) + "," + yToPixel(y).toFixed(1));
+        }
+        curve.setAttribute("points", points.join(" "));
+
+        DATA_INPUTS.forEach(function (input, index) {
+          var predicted = curveFunction(input);
+          predicted = Math.max(Y_MIN - 5, Math.min(Y_MAX + 5, predicted));
+          var line = missLines[index];
+          line.setAttribute("x1", xToPixel(input));
+          line.setAttribute("x2", xToPixel(input));
+          line.setAttribute("y1", yToPixel(DATA_ACTUALS[index]));
+          line.setAttribute("y2", yToPixel(predicted));
+        });
+      },
+      hideCurve: function () {
+        curve.setAttribute("points", "");
+        missGroup.style.display = "none";
+      }
+    };
+  }
+
+  // Builds a labelled slider. onInput is called with no arguments.
+  function makeKnob(container, id, labelText, min, max, step, initial, onInput) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "knob";
+
+    var label = document.createElement("label");
+    label.setAttribute("for", id);
+    var name = document.createElement("span");
+    name.textContent = labelText;
+    var value = document.createElement("span");
+    value.className = "val";
+    label.appendChild(name);
+    label.appendChild(value);
+
+    var slider = document.createElement("input");
+    slider.type = "range";
+    slider.id = id;
+    slider.min = String(min);
+    slider.max = String(max);
+    slider.step = String(step);
+    slider.value = String(initial);
+
+    function show() { value.textContent = Number(slider.value).toFixed(2); }
+    slider.addEventListener("input", function () { show(); onInput(); });
+    show();
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(slider);
+    container.appendChild(wrapper);
+
+    return {
+      get: function () { return Number(slider.value); },
+      set: function (next) { slider.value = String(next); show(); }
+    };
+  }
+
+  // Writes the hit-or-miss readout under a plot.
+  function writeVerdict(containerId, curveFunction, note) {
+    var container = document.getElementById(containerId);
+    if (!container) { return; }
+    container.textContent = "";
+
+    var head = document.createElement("span");
+    head.className = "head";
+    head.textContent = "at each dot";
+    container.appendChild(head);
+
+    var totalMiss = 0;
+    DATA_INPUTS.forEach(function (input, index) {
+      var predicted = curveFunction(input);
+      var miss = predicted - DATA_ACTUALS[index];
+      totalMiss += Math.abs(miss);
+
+      var span = document.createElement("span");
+      var hit = Math.abs(miss) < 0.005;
+      span.className = hit ? "hit" : "miss";
+      span.textContent = "input " + input + ": wanted " + DATA_ACTUALS[index] +
+        ", got " + predicted.toFixed(2) + (hit ? "  touching" : "  off by " + Math.abs(miss).toFixed(2));
+      container.appendChild(span);
+    });
+
+    var total = document.createElement("span");
+    total.className = totalMiss < 0.005 ? "hit" : "miss";
+    total.textContent = "total miss " + totalMiss.toFixed(2);
+    container.appendChild(total);
+
+    if (note) {
+      var noteSpan = document.createElement("span");
+      noteSpan.className = "note";
+      noteSpan.textContent = note;
+      container.appendChild(noteSpan);
+    }
+  }
+
+  function relu(value) { return value > 0 ? value : 0; }
+
+  // ---- the dots on their own -------------------------------------------------
+  var plotDots = makePlot("plot-dots", "Three measured points: input 1 gives 1, input 2 gives 4, input 3 gives 9. Nothing is drawn through them.");
+  if (plotDots) { plotDots.hideCurve(); }
+
+  // ---- one stage, two knobs -------------------------------------------------
+  var plotOne = makePlot("plot-one", "A straight line controlled by a weight and a bias, drawn against the three points it cannot all reach.");
+  var knobsOneBox = document.getElementById("knobs-one");
+  var weightOne, biasOne;
+
+  function curveOne(x) { return weightOne.get() * x + biasOne.get(); }
+  function drawOne() {
+    plotOne.update(curveOne);
+    writeVerdict("verdict-one", curveOne,
+      "Two knobs: tilt and height. No setting of them bends the line.");
+  }
+
+  weightOne = makeKnob(knobsOneBox, "weight-one", "weight — tilt", -2, 8, 0.1, 1, drawOne);
+  biasOne   = makeKnob(knobsOneBox, "bias-one", "bias — height", -6, 6, 0.1, 0, drawOne);
+  drawOne();
+
+  document.getElementById("best-one").addEventListener("click", function () {
+    // least-squares fit of a line to the three points, computed once, by hand:
+    // weight 4, bias -10/3. Rounded to the slider step.
+    weightOne.set(4);
+    biasOne.set(-3.3);
+    drawOne();
+  });
+
+  // ---- two stages, four knobs ----------------------------------------------
+  var plotTwo = makePlot("plot-two", "Two weight-and-bias stages chained with nothing between them. Whatever the four knobs, the result is a straight line.");
+  var knobsTwoBox = document.getElementById("knobs-two");
+  var weightA, biasA, weightB, biasB;
+
+  function curveTwo(x) {
+    var hidden = weightA.get() * x + biasA.get();
+    return weightB.get() * hidden + biasB.get();
+  }
+  function drawTwo() {
+    plotTwo.update(curveTwo);
+    var sameTilt = weightB.get() * weightA.get();
+    var sameHeight = weightB.get() * biasA.get() + biasB.get();
+    writeVerdict("verdict-two", curveTwo,
+      "Identical to ONE stage with tilt " + sameTilt.toFixed(2) +
+      " and height " + sameHeight.toFixed(2) + ". Four knobs, two effects.");
+  }
+
+  weightA = makeKnob(knobsTwoBox, "weight-a", "stage 1 weight", -3, 4, 0.1, 2, drawTwo);
+  biasA   = makeKnob(knobsTwoBox, "bias-a", "stage 1 bias", -4, 4, 0.1, 1, drawTwo);
+  weightB = makeKnob(knobsTwoBox, "weight-b", "stage 2 weight", -3, 4, 0.1, 1.5, drawTwo);
+  biasB   = makeKnob(knobsTwoBox, "bias-b", "stage 2 bias", -4, 4, 0.1, 0, drawTwo);
+  drawTwo();
+
+  document.getElementById("shuffle-two").addEventListener("click", function () {
+    function pick(min, max) {
+      return Math.round((min + Math.random() * (max - min)) * 10) / 10;
+    }
+    weightA.set(pick(-3, 4));
+    biasA.set(pick(-4, 4));
+    weightB.set(pick(-3, 4));
+    biasB.set(pick(-4, 4));
+    drawTwo();
+  });
+
+  // ---- the floor ------------------------------------------------------------
+  var plotRelu = makePlot("plot-relu", "The same two stages with a floor between them: negatives become zero. The line runs flat along the floor and then climbs, making one bend.");
+  var knobsReluBox = document.getElementById("knobs-relu");
+  var bendAt, climb;
+
+  function curveRelu(x) { return climb.get() * relu(x - bendAt.get()); }
+  function drawRelu() {
+    plotRelu.update(curveRelu, { showFloor: true });
+    var note = bendAt.get() <= X_MIN + 0.05
+      ? "The bend has moved off the left edge, so the floor is holding nothing back — straight again."
+      : "The bend sits at input " + bendAt.get().toFixed(2) +
+        ". Flat to its left, climbing to its right.";
+    writeVerdict("verdict-relu", curveRelu, note);
+  }
+
+  bendAt = makeKnob(knobsReluBox, "bend-at", "where the bend sits", -0.2, 3.5, 0.05, 1.6, drawRelu);
+  climb  = makeKnob(knobsReluBox, "climb", "how steeply it climbs after", 0, 8, 0.1, 3, drawRelu);
+  drawRelu();
+
+  // ---- three bends ---------------------------------------------------------
+  var plotMany = makePlot("plot-many", "Three bends at inputs 0, 1 and 2, each with its own steepness, added together. Set correctly they pass through all three measured points.");
+  var knobsManyBox = document.getElementById("knobs-many");
+  var BEND_POSITIONS = [0, 1, 2];
+  var SOLVED_CLIMBS = [1, 2, 2];
+  var climbs = [];
+
+  function curveMany(x) {
+    var total = 0;
+    for (var index = 0; index < BEND_POSITIONS.length; index += 1) {
+      total += climbs[index].get() * relu(x - BEND_POSITIONS[index]);
+    }
+    return total;
+  }
+  function drawMany() {
+    plotMany.update(curveMany, { showFloor: true });
+    writeVerdict("verdict-many", curveMany,
+      "Three bends, fixed at inputs 0, 1 and 2. Only their steepnesses are being changed.");
+  }
+
+  BEND_POSITIONS.forEach(function (position, index) {
+    climbs.push(makeKnob(knobsManyBox, "climb-" + index,
+      "steepness added at input " + position, 0, 4, 0.1, 0, drawMany));
+  });
+  drawMany();
+
+  document.getElementById("solve-many").addEventListener("click", function () {
+    climbs.forEach(function (knob, index) { knob.set(SOLVED_CLIMBS[index]); });
+    drawMany();
+  });
+  document.getElementById("reset-many").addEventListener("click", function () {
+    climbs.forEach(function (knob) { knob.set(0); });
+    drawMany();
+  });
+}());
+</script>

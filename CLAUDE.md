@@ -145,13 +145,23 @@ These exist because previous AI tutors lied to him confidently.
 - **No library until the concept is built by hand first.** Cosine similarity
   with a loop before `numpy`. Attention with explicit matrices before
   `torch.nn.MultiheadAttention`. This is his own method from Kural RAG.
-- Save every script under `code/block-NN/`.
+- Save every script under `code/block-NN/` (Block M uses `code/block-M/`), Track A builds
+  under `code/applied/`, Track C under `code/coding/`, interview prep under `code/interview/`.
 
 ---
 
 ## 6 · The syllabus
 
-Nine fundamentals blocks, then system design. Each has a gate.
+Revised 2026-10-05 to cover what an AI/ML engineer is expected to know, checked against
+the ombharatiya question bank and the Infobell job description. Four strands:
+
+```
+Fundamentals   Blocks 0, 1, M, 2-10   why things work. Each ends with a gate.
+Track A        applied                what you would actually type. Each ends with a build.
+Track C        coding challenges      timed, from scratch, one after each block's gate.
+Track S        stories                behavioural answers from his real work.
+Part B         system design          the eleven-step skeleton, one question a week.
+```
 
 ### Block 0 · How a model learns
 Inserted 2026-09-21, after he identified the gap himself. Parameter, loss and why it is
@@ -175,18 +185,39 @@ vs cross-encoder.
 Explain the ratio. Then explain why cosine ignores magnitude and give one case
 where that hurts.
 
+### Block M · Machine learning foundations
+Inserted 2026-10-05. What every ML interview assumes before it reaches LLMs, and what the
+Infobell JD calls "ML fundamentals and model evaluation". Train / validation / test, and why
+the test set is touched once. Data leakage, and grouped splits — why Clikk was split by
+domain. Underfitting and overfitting as bias and variance. Regularisation — L2 weight decay,
+dropout, early stopping — each taught as a limit on how far the model can chase noise. Loss
+functions: squared error for numbers, cross-entropy for classes, and why squared error is
+the wrong loss for probabilities. Metrics from a confusion matrix: accuracy, precision,
+recall, F1, false-positive rate, ROC-AUC, PR-AUC; why accuracy lies under class imbalance;
+choosing a threshold. Calibration. Cross-validation. Classic models at intuition level —
+linear and logistic regression, decision trees, random forests and gradient boosting,
+k-nearest neighbours, k-means — and when a classic model beats a neural one.
+
+**Gate:** Given a confusion matrix for a URL blocker, compute precision, recall and
+false-positive rate by hand, and say which one matters most for that product and why. Then
+explain why a test set that shares domains with the training set gives a dishonest score.
+
 ### Block 2 · The transformer
 Query, key, value. `softmax(QKᵀ / √d_k) V`. Why divide by √d_k — dot products
 grow with dimension, softmax saturates, gradients vanish. Self vs cross
 attention. Causal masking. Multi-head. Positional encodings and RoPE.
 Feed-forward, residuals, layer norm, pre-norm vs post-norm. Encoder-only vs
-decoder-only vs encoder-decoder.
+decoder-only vs encoder-decoder. Scaling laws at concept level: loss falls predictably as
+parameters, data and compute grow, and compute-optimal training balances the three. Every
+number quoted from a paper here is marked as reported, not derived.
 
 **Gate:** Compute attention on paper for three tokens in two dimensions. Then
 explain why a cross-encoder cannot be precomputed and a bi-encoder can.
 
 ### Block 3 · How text is generated
-Autoregressive decoding. Logits and softmax. Temperature. Top-k, top-p.
+Autoregressive decoding. Logits and softmax. Cross-entropy as the training loss on the
+next token — the loss Block 0 promised for when `actual` is a token, not a number.
+Temperature. Top-k, top-p.
 Greedy and beam search, and why chat models skip beam search. Repetition and
 frequency penalties, stop sequences. Why temperature 0 is not always
 reproducible on hosted APIs.
@@ -210,8 +241,15 @@ Supervised fine-tuning. LoRA: frozen base, two small matrices, rank as the
 inner dimension, why ~0.1% of parameters is enough, merging at inference.
 QLoRA. RLHF and DPO at concept level. Catastrophic forgetting.
 
+Prompt engineering, treated as engineering rather than as tricks: system versus user
+instructions, zero-shot and few-shot, chain-of-thought and when it actually helps, asking
+for structured output, prompt templates kept under version control, why small wording
+changes swing results, and judging a prompt change on a fixed evaluation set rather than by
+reading a few outputs.
+
 **Gate:** Explain why LoRA works despite training so few parameters. Then give
-three cases where fine-tuning is the wrong answer.
+three cases where fine-tuning is the wrong answer. Then describe how you would prove that a
+prompt change is an improvement and not noise.
 
 ### Block 6 · Retrieval — the gaps
 ANN indexes: HNSW as a layered graph with greedy search, IVF as cluster-then-
@@ -258,6 +296,76 @@ approval, allow-listing. OWASP Top 10 for LLM Applications.
 **Gate:** Write three injection payloads that would attack HopTrace through a
 retrieved document. State which defence stops each, and which one cannot be
 stopped.
+
+### Block 10 · Multimodal — one session, concept level
+How an image reaches a language model: cut into patches, encoded, projected into the same
+embedding space as text tokens. Contrastive training of a shared text–image space
+(CLIP-style), and what that space lets you search. Audio at the level of "it becomes tokens
+too". What multimodal RAG changes in the pipeline. Kept short on purpose; expand only if a
+target role asks for it.
+
+**Gate:** Explain how a picture reaches the same model that reads text, and what a shared
+text–image embedding space lets you do that two separate models cannot.
+
+### Track A · Applied — the tools a job description names
+Theory blocks teach why. This track teaches what you would type. Every item ends with a
+small working build under `code/applied/` and three interview questions answered cold. Same
+rules as the blocks: build by hand first where possible, then the library.
+
+```
+A1   PyTorch              tensors, autograd, a training loop. Block 0 rebuilt in 20 lines.
+A2   Hugging Face         tokenizers, AutoModel, pipelines, sentence-transformers,
+                          model cards and licences
+A3   Vector databases     FAISS and ChromaDB hands-on; pgvector on the PostgreSQL he knows;
+                          one-line positioning of Pinecone, Milvus, Weaviate; metadata
+                          filters, updates and deletes
+A4   LangChain, LlamaIndex  what each abstracts; rebuild a small Kural RAG in each; what
+                          you lose against hand-written code
+A5   LangGraph            state, nodes, edges, conditional edges, loops, termination,
+                          checkpointing; build the HopTrace skeleton
+A6   CrewAI, multi-agent  what it adds over LangGraph, and when it is the wrong choice
+A7   Model serving        llama.cpp, Ollama, vLLM; a quantised model run locally; measure
+                          time to first token and tokens per second
+A8   Containers           Docker for Kural RAG; Kubernetes pod, deployment, service,
+                          scaling; FastAPI against Flask
+A9   Cloud                deploy Kural RAG on one cloud; managed model services on AWS,
+                          GCP and Azure (names and prices: check current)
+A10  MLOps                experiment tracking, data and model versioning, evaluation in
+                          CI, monitoring, drift, rollback
+A11  Fine-tuning          LoRA on a small open model, compared to the base on a fixed set
+```
+
+**Gate per item:** the build runs on his machine, and he answers its three questions cold.
+
+**Interview override:** when an interview gets a date, the Track A items its job
+description names move ahead of the blocks. For any role that names agentic AI, A5 and
+Block 8 come first.
+
+### Track C · Coding challenges
+Timed, 30–45 minutes, plain Python, no notes, no library for the core idea. One after each
+block's gate. The question bank's own challenges are a further source once these pass.
+
+```
+after 0    a two-layer network trained with backprop written by hand
+after M    logistic regression by gradient descent; precision, recall, F1 from raw output
+after 1    cosine top-k search; the byte-level BPE training loop
+after 2    single-head, then multi-head attention with a causal mask
+after 3    temperature, top-k and top-p sampling
+after 4    a toy decode step with and without a KV cache, timed
+after 6    BM25 and reciprocal rank fusion
+after 7    Cohen's kappa and McNemar's exact test
+after 8    a ReAct loop with one tool and a hop cap
+```
+
+### Track S · Stories — behavioural
+Five or six true stories in one fixed shape: the situation, what he did, the measured
+result, what he would do differently. Candidates from his own record: rejecting a
+fine-tuned SecureBERT that had learned domain shortcuts; finding systematically swapped
+labels in a public dataset; the three data-leakage incidents; declining a 15-point gain at
+p = 0.0534; diagnosing the reranker by experiment, not correlation; closing 25+ VAPT
+findings for CERT-In "Safe to Host".
+
+**Gate:** each story told aloud in under two minutes, with its number, no notes.
 
 ### Part B · System design for LLM systems
 
@@ -314,6 +422,9 @@ He built these. Reaching for them beats inventing a toy example.
 
 | Block | Anchor in his own work |
 |---|---|
+| M | Clikk: 98.6% accuracy at 0.3% FPR on a domain-grouped test set of 5,249 URLs. Why group by domain? Why is the false-positive rate the number that matters for a blocker, not accuracy? |
+| M | He rejected a fine-tuned SecureBERT because it had learned domain shortcuts, and shipped logistic regression. When does a classic model beat a neural one? |
+| M | A public URL dataset had systematically swapped labels. What does label noise do to training, and how could he have caught it sooner? |
 | 1 | LaBSE (768 dim) caught 15 of 22 planted corpus errors; MiniLM (384 dim) caught 0. Why did dimension and training matter? |
 | 1, 2 | LaBSE is a bi-encoder, bge-reranker-v2-m3 is a cross-encoder. He measured the latency gap. Now explain the mechanism |
 | 3 | He caches query rewrites because temperature 0 makes them reproducible. Where does that guarantee break? |
@@ -391,16 +502,27 @@ A session is 45 to 90 minutes. Rough shape:
 
 ## 11 · Schedule
 
-Twelve weeks. Study during office hours, projects after hours.
+Sixteen weeks from 2026-09-16, ending in the first week of January 2027. Extended from
+twelve on 2026-10-05, when Block M, Block 10 and Tracks A, C and S were added. Study during
+office hours, projects after hours.
 
-| Weeks | Fundamentals | System design |
-|---|---|---|
-| 1–2 | Blocks 1–2 | Learn the skeleton. Question 1 |
-| 3–4 | Blocks 3–4 | Questions 2–3 |
-| 5–6 | Blocks 5–6 | Questions 4–5 |
-| 7–8 | Blocks 7–8 | Questions 6–7 |
-| 9–10 | Block 9, plus weak spots | Questions 8–9 |
-| 11–12 | Full revision, every gate re-run cold | Question 10, mock interviews |
+| Weeks | Fundamentals | Track A | Design, coding, stories |
+|---|---|---|---|
+| 1–3 | Block 1 part 1, most of Block 0 | — | — |
+| 4 | Block 0 finished, Block M begun | A1 PyTorch | Coding after 0 |
+| 5 | Block M gate, Block 1 part 2 (embeddings) and gate | A2 Hugging Face | Coding after M and 1 |
+| 6–7 | Block 2 | A3 Vector databases | Part B skeleton, question 1. Coding after 2 |
+| 8 | Block 3 | A7 Model serving | Question 2. Coding after 3 |
+| 9 | Block 4 | A8 Containers | Question 3. Coding after 4 |
+| 10 | Block 5, with prompt engineering | A11 Fine-tuning | Question 4 |
+| 11 | Block 6 | A4 LangChain, LlamaIndex | Question 5. Coding after 6 |
+| 12 | Block 7 | A10 MLOps | Question 6. Coding after 7 |
+| 13 | Block 8 | A5 LangGraph, A6 CrewAI | Question 7. Coding after 8 |
+| 14 | Block 9, Block 10 | A9 Cloud | Question 8. Stories |
+| 15 | Weak spots | — | Question 9. Stories |
+| 16 | Every gate re-run cold | — | Question 10, mock interviews |
+
+The interview override in Track A can reorder this at any time.
 
 DSA runs in parallel and is **not** part of this repository.
 
@@ -437,6 +559,9 @@ Rules:
    memory.
 6. `--stats` shows what is due, `--block N` drills one block, `--all` ignores due dates
    for a cold re-run of everything.
+7. Card ids carry a prefix per strand: `nn-` Block 0, `tok-` and later `emb-` Block 1,
+   `ml-` Block M, then one short prefix per later block, and `app-` for Track A. The
+   `block:` line uses the block's own label (`0`, `1`, `M`, `2` … `10`, `A`).
 
 ---
 

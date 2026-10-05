@@ -386,3 +386,28 @@ A: Either — it is a convention, not a law. Dividing by the number of rows make
    gradient that many times smaller, and the learning rate cancels it exactly; the direction
    never changes. People divide so the learning rate keeps working when the number of rows
    per step changes.
+
+### id: tok-031
+block: 1
+Q: Could stage A4 be done by counting every pair once, sorting descending, and taking the
+   merges in that order? Prove your answer.
+A: No. Merging changes which pieces are neighbours, so it creates pairs that were not in
+   the first count. On the single word banana: the first count holds only b+a, a+n, n+a.
+   Merging n+a gives b | a | na | na, and the pair na+na now exists out of nothing. A list
+   built from one count can never contain it. A4 is count, merge ONE pair, recount, repeat.
+
+### id: tok-032
+block: 1
+Q: In stage A4 of Pipeline A, what is counted — single characters, or something else?
+A: Neighbouring PAIRS of pieces, not single characters. The count of single characters is
+   never used to choose a merge. The distinct-chunk counts from A2 are a separate thing and
+   they never change.
+
+### id: nn-027
+block: 0
+Q: The loss is squared, so it is always positive and carries no direction. Yet the gradient
+   does carry a direction. Where does the sign come back from?
+A: The loss is error squared. The gradient is `2 x (input x error)` — the error appears there
+   UNSQUARED, so its sign survives. Squaring removes direction from the measure of
+   wrongness; the gradient is a different quantity and keeps it. That sign is the only thing
+   telling the update which way to move.

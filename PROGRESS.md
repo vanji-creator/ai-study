@@ -1,88 +1,85 @@
 # Progress
 
-Last updated: 2026-09-22, end of session. Written as a handover — a new session on another
-machine should be able to continue from this file alone.
+Last updated: 2026-10-05. Written as a handover — a new session on another machine should
+be able to continue from this file alone.
 
 ---
 
 ## Current
 
-Block: **0 — How a model learns** (part taught), then **Block 1 Part 2 — embeddings**
-Started: 2026-09-16
+Week 4 of 16 begins 2026-10-07. Started 2026-09-16.
 
-Plan agreed 2026-09-22: finish the gaps in Blocks 0 and 1, consolidate both together with
-definitions, examples and cross-questions, then let it settle for 2–3 days. Spaced
-repetition is now a standing rule — `CLAUDE.md` §12.
+**The syllabus was revised on 2026-10-05**, at his request, to cover everything an AI/ML
+engineer is expected to know. Added: Block M (machine learning foundations), prompt
+engineering inside Block 5, scaling laws inside Block 2, Block 10 (multimodal, one session),
+Track A (applied tools — PyTorch to MLOps), Track C (timed coding challenges), Track S
+(behavioural stories). The schedule went from twelve weeks to sixteen. All of it is in
+`CLAUDE.md` §6 and §11.
+
+Block in progress: **Block 0 — How a model learns.** Everything taught except
+backpropagation.
 
 ### What is finished
 
-**Block 1 Part 1 · Tokenisation — DONE.** Mini-check passed cold 2026-09-21. Pipeline A was
-re-taught in depth on 2026-09-22 at his request. Covered: the fixed lookup table
-constraint; why whole words and single letters both fail; pieces; BPE as count-pairs,
-merge-the-top, repeat for a fixed budget; replaying an ordered merge list on unseen words;
-code points, UTF-8 and the 256-byte safety net; the two reasons non-English costs more;
-special tokens and who inserts them (Way A vs Way B); the trailing space; OpenAI's public
-tokeniser vs Anthropic's private one; the tokeniser family (BPE, WordPiece, Unigram,
-SentencePiece as a library); the vocabulary as a contract with the embedding table; the
-embedding-table arithmetic; where frequency fails as a proxy; the two "trainings" and the
-two corpora; correctness from consistency, efficiency from representativeness; lossless is
-not harmless.
+**Block 1 Part 1 · Tokenisation — taught.** Mini-check passed cold 2026-09-21. The full
+Block 1 gate has not run: it needs embeddings and a real tokeniser.
 
-**Block 0 · part taught.** Parameter, loss and why it is squared, gradient as direction
-and steepness, the update rule `new_weight = weight − learning_rate × gradient`, the
-learning rate and both of its failure modes, gradient descent. All anchored to his own
-reranker latency measurements (10/20/50 candidates → 3/6/15 s, true weight 0.3).
+**Block 0 · taught except backprop.** Parameter; loss and why it is squared (two reasons);
+gradient as the tilt of the loss curve; the update rule; both learning-rate failure modes
+and why a large one explodes; stochastic gradient descent, one row at a time; two
+parameters; the bias as a weight whose input is always 1; where `actual` comes from, and
+that a language model gets it free from the next token; two linear stages collapse into
+one; `max(0, value)` and the bend; bend positions found by gradient descent; negative rates
+turning the line downward; overfitting, shown with 3 pieces against 30 on noisy data.
 
-**Review system · built 2026-09-22.** 42 cards, Leitner boxes, verified by running a
-session and by the `REVIEW_TODAY` override.
+**Review system.** Built 2026-09-22. 59 cards. First real session run 2026-09-30.
+
+### The review result that matters
+
+2026-09-30, eight cards answered cold: **2 right, 6 missed.** Every miss had the same
+shape — the fact was right, the consequence attached to it was missing. Example: he named
+the space as belonging to the following word, but not that a trailing space in a prompt
+produces a rare lone-space token. A fact-and-consequence sheet for both blocks was given
+in chat on 2026-10-02 for him to read before the next review.
+
+He then took a few days off on 2026-10-01 — tired, finding study hard. Do not open the next
+session with twelve cards. Use `--limit 4`.
 
 ---
 
 ## How to start the next session
 
-1. **Run the review first.** `python3 review/review.py`. Ask the due cards cold, judge
-   honestly, a vague answer is a miss.
-2. **Clear the one open check** (it is card `nn-007`, and he has dodged it twice):
+1. **Review, four cards.** `python3 review/review.py --limit 4`. The six misses from
+   2026-09-30 are overdue and come first. Judge honestly: a fact without its consequence is
+   a miss, and say which half was missing.
+2. **Backpropagation.** Finishes Block 0. He wants paper and pen for it. Two stages, one
+   data row, small numbers, brackets on every group. Walk the error backwards one stage at
+   a time and check each gradient against the nudge method in
+   `code/block-00/slope_by_two_points.py`. The bridge is already laid: in
+   `bends_are_learned.py` the gradient for a bend had to pass back through the `max`, and a
+   piece whose bend was not reached got a gradient of zero. Script:
+   `code/block-00/backprop_by_hand.py`.
+3. **Block 0 gate** (`CLAUDE.md` §6). Then Track C: a two-layer network with backprop by
+   hand.
+4. **Block M and A1 PyTorch** — week 4. Anchor Block M to Clikk (§7).
+5. **Block 1 Part 2, embeddings, and the Block 1 gate** — week 5. The gate needs
+   `pip install tiktoken`; system Python here is 3.12 with pip 24.0, so use a virtual
+   environment. If the install fails, use the repo's own BPE and label the numbers as ours.
 
-   > Why does a learning rate that is too large make the loss get *worse*, rather than just
-   > converge slowly? Use the word gradient.
+### If an interview gets a date
 
-   The run to show him if he needs the numbers is in `code/block-00/gradient_descent.py`,
-   learning rate 0.0005: weight 0.5 → −0.1 → 1.1 → −1.3, loss 120 → 480 → 1,920 → 7,680.
-   Expected answer: each overshoot lands further up the far side where the ground is
-   steeper, so the gradient is larger, so the next overshoot is larger.
+He has a referral for **Junior AI/ML Engineer at Infobell IT Solutions, Bangalore**. The
+referrer was applying on 2026-10-05; no interview is scheduled. The JD names LangGraph,
+LangChain, LlamaIndex, CrewAI, vector databases, RAG, agentic AI, cloud, Docker,
+Kubernetes. His resume lists most of those as "working knowledge / currently learning", and
+names LangGraph in the HopTrace project.
 
-3. **Then teach, in this order:**
-
-   **Next beat — from one parameter to a layer.** Extend the reranker formula to two
-   parameters: `predicted_time = weight × candidates + fixed_overhead`. The loss becomes a
-   surface rather than a curve, and there is now one gradient per parameter. Then: a layer
-   is a matrix multiply plus one non-linear function, and without the non-linearity a stack
-   of layers collapses into a single layer — show this numerically, do not assert it.
-   Scripts to write: `code/block-00/two_parameters.py`, `code/block-00/why_non_linearity.py`.
-
-   **Then — backpropagation.** A two-layer toy by hand: one forward pass with real numbers,
-   then the chain rule walked backwards, checking each analytic gradient against the
-   peek-to-the-right method already in `code/block-00/slope_by_two_points.py`. The point to
-   land: backprop is not a different idea from gradient descent; it is how every gradient is
-   obtained in one backward sweep instead of one peek per parameter.
-   Script: `code/block-00/backprop_by_hand.py`. Then run the Block 0 gate (`CLAUDE.md` §6).
-
-   **Then — Block 1 Part 2, embeddings.** Cosine, dot product and Euclidean built with
-   explicit loops before any library; why normalising makes cosine and dot product
-   equivalent (a listed weak spot); dimensionality anchored to LaBSE 768 catching 15 of 22
-   planted errors where MiniLM 384 caught 0; bi-encoder vs cross-encoder anchored to the
-   latency gap he measured.
-
-   **Then — the Block 1 gate.** Needs a real tokeniser: `pip install tiktoken` (his choice,
-   agreed). Write `code/block-01/gate_token_ratio.py` to count a Tamil sentence and its
-   English translation and break the ratio into the two taught causes. If the install
-   fails, fall back to the repo's own BPE and label the numbers as ours.
-
-   **Then — consolidation across 2–3 days.** Definitions with their smallest worked example;
-   cross-questions that need both blocks at once; then a cold written test in
-   `notes/recall/blocks-0-1-1.md`, marked ✓ / ~ / ✗ / –, with every ✗ and – becoming a new
-   card at box 1.
+When a date exists, apply the interview override in `CLAUDE.md` §6 Track A: A5 LangGraph
+and Block 8 first, then A3 vector databases, then Block 4 inference (Infobell builds an
+inference framework for AMD hardware), then resume defence of every bullet. A ten-day plan
+for this was drafted in chat on 2026-10-04, and the first script exists:
+`code/interview/01_agent_loop_plain_python.py` — a two-hop question answered by a plain
+Python loop, before LangGraph. He was asked to predict its output and had not yet answered.
 
 ---
 
@@ -96,6 +93,13 @@ session and by the `REVIEW_TODAY` override.
 
 ## Weak spots to revisit
 
+- [ ] **Gives the fact, drops the consequence.** The pattern behind six of eight misses on
+      2026-09-30. In an interview this is exactly where the follow-up question lands.
+- [ ] Described Pipeline A stage A4 as "count once and sort descending". It is a loop:
+      count pairs, merge one, recount. Proof: `code/block-01/why_the_loop_must_recount.py`
+      (`banana` creates `na+na`, which was not in the first count). Cards `tok-031`, `tok-032`.
+- [ ] Two reasons Tamil costs more: he gives the corpus reason and forgets the bytes reason.
+- [ ] Squaring the error does two jobs; he gives only "removes the sign".
 - [ ] Pipeline A stage boundaries. On 2026-09-22 he gave the sequence but not the
       numbering, merged A2/A3 wrongly, and omitted A5 — the output, which is the only
       stage whose result survives. Hook taught: **text, count, pieces, loop, keep**.
@@ -115,8 +119,6 @@ All of these exist as cards in `review/cards.md`, so the schedule will bring the
 
 ## Open questions
 
-- Card `nn-007`, unanswered twice: why a too-large learning rate makes the loss worse
-  rather than slower. Ask cold at the start of the next session.
 - Tamil suffix examples used on 2026-09-16 (வீடு / வீட்டில் / வீட்டுக்கு / வீட்டிலிருந்து) —
   he has not confirmed they are correct.
 - `pip install tiktoken` has not been attempted yet; internet access from this machine is
@@ -132,7 +134,7 @@ AGENTS.md                          same session-start rule for the Codex side
 PROGRESS.md                        this file
 
 review/review.py                   spaced repetition runner, standard library only
-review/cards.md                    42 cards: 30 tokenisation, 12 Block 0
+review/cards.md                    59 cards: 32 tokenisation, 27 Block 0
 review/schedule.json               due dates and boxes, committed so it travels
 
 notes/block-01.md                  written notes + the 15-heading revision outline
@@ -144,6 +146,16 @@ notes/recall/tokenisation-1.md     first recall attempt, not yet filled in
 code/block-00/loss_curve.py            loss across many weights — the valley
 code/block-00/slope_by_two_points.py   the gradient found by peeking one step right
 code/block-00/gradient_descent.py      three learning rates: works, oscillates, explodes
+code/block-00/why_too_large_explodes.py   the update collapses to one multiplier
+code/block-00/see_the_valley.py           the loss curve drawn; gradient as its tilt
+code/block-00/two_parameters.py           weight and bias together
+code/block-00/bias_is_a_weight_with_input_one.py  influence; gradient measured, not asserted
+code/block-00/why_add_the_rows.py         stochastic vs batch; sum vs average
+code/block-00/the_loss_is_a_surface.py    two-parameter loss as a contour map
+code/block-00/why_non_linearity.py        linear stages collapse; max(0, ...) breaks it
+code/block-00/bends_are_learned.py        slab-bill bends found by gradient descent
+code/block-00/overfitting.py              3 pieces vs 30 on noisy rows
+code/block-00/up_and_down.py              20, 40, 30, 60 fitted with a negative rate
 
 code/block-01/word_frequency_tail.py      the long tail — 64.5% of words appear once
 code/block-01/pair_merging_by_hand.py     BPE on low/lower/newest/widest
@@ -156,6 +168,14 @@ code/block-01/tokeniser_pipeline.py       both pipelines end to end
 code/block-01/pipeline_a_traced.py        Pipeline A on nine words, every stage
 code/block-01/cost_of_missing_merges.py   Tamil 83 tokens vs English 7
 code/block-01/two_corpora_compared.py     English- vs Python-trained tokeniser
+code/block-01/why_the_loop_must_recount.py  merging creates pairs the first count lacked
+
+code/interview/01_agent_loop_plain_python.py  two-hop question, plain Python, pre-LangGraph
+
+notes/bending-the-line.html        interactive page on layers and the bend, published at
+                                   https://claude.ai/artifact/AjzmYxQ4fbeMwuZw6aXqyc
+notes/questions-for-another-model.md  his twelve open questions as a paste-ready prompt
+                                   (he used his own prompt instead)
 ```
 
 **The reference page** is published at

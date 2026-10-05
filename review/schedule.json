@@ -7,9 +7,9 @@
   },
   "nn-002": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "nn-003": {
     "box": 1,
@@ -25,9 +25,9 @@
   },
   "nn-005": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "nn-006": {
     "box": 1,
@@ -155,6 +155,12 @@
     "last_seen": null,
     "misses": 0
   },
+  "nn-027": {
+    "box": 1,
+    "due": "2026-09-30",
+    "last_seen": null,
+    "misses": 0
+  },
   "tok-001": {
     "box": 1,
     "due": "2026-09-22",
@@ -174,9 +180,9 @@
     "misses": 0
   },
   "tok-004": {
-    "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
+    "box": 2,
+    "due": "2026-10-02",
+    "last_seen": "2026-09-30",
     "misses": 0
   },
   "tok-005": {
@@ -193,14 +199,14 @@
   },
   "tok-007": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "tok-008": {
-    "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
+    "box": 2,
+    "due": "2026-10-02",
+    "last_seen": "2026-09-30",
     "misses": 0
   },
   "tok-009": {
@@ -247,9 +253,9 @@
   },
   "tok-016": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "tok-017": {
     "box": 1,
@@ -283,9 +289,9 @@
   },
   "tok-022": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "tok-023": {
     "box": 1,
@@ -301,9 +307,9 @@
   },
   "tok-025": {
     "box": 1,
-    "due": "2026-09-22",
-    "last_seen": null,
-    "misses": 0
+    "due": "2026-10-01",
+    "last_seen": "2026-09-30",
+    "misses": 1
   },
   "tok-026": {
     "box": 1,
@@ -332,6 +338,18 @@
   "tok-030": {
     "box": 1,
     "due": "2026-09-22",
+    "last_seen": null,
+    "misses": 0
+  },
+  "tok-031": {
+    "box": 1,
+    "due": "2026-09-30",
+    "last_seen": null,
+    "misses": 0
+  },
+  "tok-032": {
+    "box": 1,
+    "due": "2026-09-30",
     "last_seen": null,
     "misses": 0
   }

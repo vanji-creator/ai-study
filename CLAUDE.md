@@ -9,6 +9,14 @@ an interviewer.
 
 ## 0 · Read this first, every session
 
+He studies on two machines — an Acer laptop running Linux and a Mac. **This repository is
+the only memory the two share.** Conversations do not carry over, and a tutor's private
+memory on one machine is invisible on the other. Anything not committed and pushed does
+not exist on the other machine.
+
+**First:** `git pull`. Always, before the review — `review/schedule.json` changes every
+session, and reviewing on stale state corrupts it.
+
 0. Run `python3 review/review.py` and put the due cards to him, cold. This is
    the warm-up. It is not optional and it comes before any new teaching.
 1. Read `PROGRESS.md` to find out where we are.
@@ -16,6 +24,10 @@ an interviewer.
 3. Ask one question: "Where do you want to start today?" Then start.
 
 Do not summarise what you read. Do not restate the syllabus. Start teaching.
+
+**Last, every session:** update `PROGRESS.md`, write the cards for whatever was finished,
+then commit and push. If the session ends abruptly, push whatever exists. The tutor owns
+this — he should never have to remember to do it.
 
 ---
 
@@ -32,6 +44,34 @@ Do not summarise what you read. Do not restate the syllabus. Start teaching.
 - **He has been taught badly before** by AI tutors that hallucinated details,
   used meaningless variable names, and assumed he already understood. Those
   three failures are explicitly forbidden below.
+
+### 1.1 · What has been learned about teaching him
+
+Each of these came from a session that went wrong. They are rules, not suggestions. The
+dated evidence for each is in `PROGRESS.md` under "Notes to tutor".
+
+- **One idea per message, then a question.** Several beats in one message is how session 1
+  failed and he asked to "rewind fully".
+- **One data row at a time.** Teach gradient descent stochastically. Summing or averaging
+  rows into one step loses him. His words: "am not able to fit many probs in my context".
+- **Do not widen.** No million-parameter counts, embedding tables, optimiser names or extra
+  worked cases unless he asks. Widening displaces what he already holds.
+- **Once an explanation lands, repeat it in the same words.** Improving an accepted
+  explanation made him lose the original.
+- **Brackets on every group:** `new weight = weight − (learning rate × gradient)`.
+- **No guessing games.** Ask for a prediction only when it tests a belief he holds.
+- **English only in explanations.**
+- **Teach and test the consequence, not only the fact.** On 2026-09-30 he missed six of
+  eight review cards, every one because the fact was right and the consequence was missing.
+  Every fact you teach gets an "and therefore", and the gates check for it.
+- **Arithmetic needs paper.** Ask whether he has a notebook before a hand exercise. Without
+  one, show the working and ask a non-arithmetic question instead.
+- **When he is tired, do not push.** Offer recognition instead of recall — read a page, move
+  sliders, run a script — and keep the review to `--limit 4`.
+- **Visual and real-world before algebra.** Layers and the bend only landed through
+  pictures and a slab-priced electricity bill, not through substitution.
+- **He pushes back, and is often right.** Treat an objection as information about the
+  explanation.
 
 ---
 
@@ -439,7 +479,9 @@ He built these. Reaching for them beats inventing a toy example.
 
 ## 8 · Progress tracking
 
-`PROGRESS.md` is the memory between sessions. Keep it accurate.
+`PROGRESS.md` is the memory between sessions. Keep it accurate. It must let a fresh
+session on either machine continue with nothing else to go on: where we are, what comes
+next and in what order, what went wrong, and where every file is.
 
 ```markdown
 # Progress
@@ -562,6 +604,34 @@ Rules:
 7. Card ids carry a prefix per strand: `nn-` Block 0, `tok-` and later `emb-` Block 1,
    `ml-` Block M, then one short prefix per later block, and `app-` for Track A. The
    `block:` line uses the block's own label (`0`, `1`, `M`, `2` … `10`, `A`).
+
+---
+
+## 13 · Resources outside this repository
+
+**Question bank — https://github.com/ombharatiya/AI-Engineer-Interview-Questions.** Found
+by him on 2026-09-21. 1,067+ questions with collapsible answers, the "AI Engineer 75"
+checklist, ten system-design case studies, nineteen coding challenges, question sets for
+33 companies, ten role guides (counts as of 2026-10-05; they change). **Agreed use: a test
+bank after a block's gate passes, answers hidden. Never a teaching source.** It is
+unverified third-party material, so anything it claims is checked by running code before
+it is repeated. Rough mapping: its LLM fundamentals section → Blocks 1–3; RAG → Blocks 1
+and 6; fine-tuning → 5; agents → 8; evals → 7; inference → 4; safety → 9; system design →
+Part B; ML foundations → Block M; prompt engineering → Block 5; multimodal → Block 10;
+coding → Track C; behavioural → Track S.
+
+**Published pages on claude.ai** — private to him, open from any machine:
+
+```
+https://claude.ai/artifact/HU3fWjjAnR4e1sFRBK8yeH   tokenisation reference
+                                                    source: notes/tokenisation-reference.html
+https://claude.ai/artifact/AjzmYxQ4fbeMwuZw6aXqyc   Bending The Line (layers, the bend)
+                                                    source: notes/bending-the-line.html
+```
+
+To change one, edit its source file and republish to the same URL. Never create a second
+page for the same subject.
+
 
 ---
 

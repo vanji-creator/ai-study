@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-10-05. Written as a handover — a new session on another machine should
+Last updated: 2026-10-05, the last session on the Acer before moving to the Mac. Written as a handover — a new session on another machine should
 be able to continue from this file alone.
 
 ---
@@ -40,7 +40,8 @@ turning the line downward; overfitting, shown with 3 pieces against 30 on noisy 
 shape — the fact was right, the consequence attached to it was missing. Example: he named
 the space as belonging to the following word, but not that a trailing space in a prompt
 produces a rare lone-space token. A fact-and-consequence sheet for both blocks was given
-in chat on 2026-10-02 for him to read before the next review.
+in chat on 2026-10-02 and is saved as `notes/fact-and-consequence.md`. Suggest he reads it
+before the next review.
 
 He then took a few days off on 2026-10-01 — tired, finding study hard. Do not open the next
 session with twelve cards. Use `--limit 4`.
@@ -66,20 +67,12 @@ session with twelve cards. Use `--limit 4`.
    `pip install tiktoken`; system Python here is 3.12 with pip 24.0, so use a virtual
    environment. If the install fails, use the repo's own BPE and label the numbers as ours.
 
-### If an interview gets a date
+### Parked
 
-He has a referral for **Junior AI/ML Engineer at Infobell IT Solutions, Bangalore**. The
-referrer was applying on 2026-10-05; no interview is scheduled. The JD names LangGraph,
-LangChain, LlamaIndex, CrewAI, vector databases, RAG, agentic AI, cloud, Docker,
-Kubernetes. His resume lists most of those as "working knowledge / currently learning", and
-names LangGraph in the HopTrace project.
-
-When a date exists, apply the interview override in `CLAUDE.md` §6 Track A: A5 LangGraph
-and Block 8 first, then A3 vector databases, then Block 4 inference (Infobell builds an
-inference framework for AMD hardware), then resume defence of every bullet. A ten-day plan
-for this was drafted in chat on 2026-10-04, and the first script exists:
-`code/interview/01_agent_loop_plain_python.py` — a two-hop question answered by a plain
-Python loop, before LangGraph. He was asked to predict its output and had not yet answered.
+An interview referral (Infobell, Junior AI/ML Engineer) came up on 2026-10-04. On
+2026-10-05 he said to ignore it for now. Do not raise it. If he brings an interview back
+with a date, apply the interview override in `CLAUDE.md` §6 Track A. The one script written
+for it stays: `code/interview/01_agent_loop_plain_python.py`.
 
 ---
 
@@ -174,6 +167,7 @@ code/interview/01_agent_loop_plain_python.py  two-hop question, plain Python, pr
 
 notes/bending-the-line.html        interactive page on layers and the bend, published at
                                    https://claude.ai/artifact/AjzmYxQ4fbeMwuZw6aXqyc
+notes/fact-and-consequence.md      every Block 0 and 1 fact with its consequence beside it
 notes/questions-for-another-model.md  his twelve open questions as a paste-ready prompt
                                    (he used his own prompt instead)
 ```

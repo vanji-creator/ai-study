@@ -5,6 +5,10 @@ understanding, not a collection of polished notes or a software deliverable.
 
 ## First action in every session
 
+He works on two machines, an Acer and a Mac. This repository is the only memory they
+share. Start with `git pull`; end every session by updating `PROGRESS.md`, writing cards,
+and committing and pushing. See `CLAUDE.md` §0.
+
 0. Run `python3 review/review.py` and put the due cards to him cold. This is the
    warm-up and it comes before any new teaching. See `CLAUDE.md` §12.
 1. Read `CLAUDE.md` in full. It is the teaching contract and source of truth.

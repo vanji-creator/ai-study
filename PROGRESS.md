@@ -81,8 +81,7 @@ concreteness fading
    the runner orders by due date, so never-seen cards come first; put the 2026-09-30 misses
    (nn-005, tok-007, tok-016, tok-022, tok-025) and nn-002 first by hand. A recited formula
    without its meaning is a miss.
-2. **Re-teach "the gradient is the slope of the loss"** on the §1.2 ladder before anything
-   new: the question → the valley picture (`code/block-00/see_the_valley.py`) → measure the
+2. ~~Re-teach "the gradient is the slope of the loss"~~ — done 2026-10-07. What it was: the question → the valley picture (`code/block-00/see_the_valley.py`) → measure the
    slope by nudging (`code/block-00/slope_by_two_points.py`, code computes, he reads) →
    only then the shortcut `2 × (input) × (error)`, as "a faster way to get what we measured,
    for loss = error² only". Check with meaning questions, never arithmetic.
@@ -119,8 +118,13 @@ for it stays: `code/interview/01_agent_loop_plain_python.py`.
 
 ## Weak spots to revisit
 
-- [ ] **Memorised the gradient formula; lost that the gradient is the slope of the loss**
-      (2026-10-07). Caused by the tutor giving the formula first. Cards nn-028, nn-031.
+- [x] **Memorised the gradient formula; lost that the gradient is the slope of the loss**
+      (2026-10-07). Re-taught the same day on the §1.2 ladder: question → valley →
+      measured by nudging → sign from after − before → derived 2 × input × error with
+      (a + b)². He judged it "understanding required for engineering level". Cards nn-028,
+      nn-031, nn-033, nn-034 will test it cold.
+- [ ] **Thought the gradient is the height of a point above the minimum** (2026-10-07).
+      Fixed with weights 0.1 and 0.5: same loss 16, gradients −160 and +160. Card nn-032.
 - [ ] Why we square, and why a loss is needed at all (nn-002, nn-030, nn-031). The
       "smooth at zero" and "aims at the average" reasons were not understood — they need
       `maths-for-ml.md` entries taught first (median not yet taught).

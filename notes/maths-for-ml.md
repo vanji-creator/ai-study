@@ -54,6 +54,23 @@ error moves by the input. So the slope of the loss for one weight is
 **This is a shortcut for one loss only.** Change the loss and the shortcut changes. The
 meaning — slope of the loss — never changes.
 
+## Squaring a sum — taught 2026-10-07
+
+`(a + b)² = a² + (2 × a × b) + b²`. Check: `(4 + 0.02)² = 16 + 0.16 + 0.0004 = 16.1604`.
+
+Why ML needs it: it is the only algebra needed to derive the gradient of error².
+
+## d-notation — taught 2026-10-07
+
+`d(loss) / d(weight)` means (change in loss) ÷ (change in weight) for a very tiny step. It is
+the measured slope, written as a symbol. `d` = "a tiny change in".
+
+Derivation of the gradient of error² for one weight, done with him:
+nudge weight by h → error grows by (input × h) → new loss = error² + (2 × error × input × h)
++ (input × h)² → subtract old loss, divide by h → (2 × error × input) + (input² × h) → h tiny
+→ **2 × error × input**. At weight 0.5, input 20, error 4, h = 0.001 the leftover is 0.4,
+which is why the measurement gave 160.4.
+
 ## Mean and median — not yet taught
 
 Will be needed for "squared error aims at the average, absolute error at the median".

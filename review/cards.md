@@ -446,3 +446,27 @@ A: The gradient is the slope of the loss — with no loss there is nothing to ta
    of, so no gradient and no direction. The choice of loss also decides what "good" means.
    And the loss is the number you watch to see whether training works and to compare
    models.
+
+### id: nn-032
+block: 0
+Q: Weights 0.1 and 0.5 both have loss 16. Is the gradient the same at both? What does this
+   tell you about the difference between the loss and the gradient?
+A: No: −160 at 0.1, +160 at 0.5. The loss is the HEIGHT (how wrong); the gradient is the
+   TILT where you stand (which way the ground slopes, and how steeply). Same height can need
+   opposite moves, so height alone cannot give direction.
+
+### id: nn-033
+block: 0
+Q: Where does the SIGN of the gradient come from — in the measurement, and in the shortcut?
+A: Measurement: (loss after a tiny step right − loss before); the step is positive, so the
+   sign is whether the loss rose or fell. Shortcut 2 × input × error: 2 and the input are
+   positive, so the sign is the error's — prediction too high gives +, too low gives −.
+
+### id: nn-034
+block: 0
+Q: Derive the gradient of loss = error² for one weight without a calculus rule. Which single
+   piece of algebra do you need?
+A: (a + b)² = a² + 2ab + b². Nudge the weight by h: error grows by input × h. New loss =
+   error² + 2 × error × input × h + (input × h)². Subtract the old loss, divide by h:
+   2 × error × input + input² × h. Shrink h and the last part vanishes.
+

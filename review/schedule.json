@@ -7,9 +7,9 @@
   },
   "nn-002": {
     "box": 1,
-    "due": "2026-10-01",
-    "last_seen": "2026-09-30",
-    "misses": 1
+    "due": "2026-10-07",
+    "last_seen": "2026-10-06",
+    "misses": 2
   },
   "nn-003": {
     "box": 1,
@@ -158,6 +158,30 @@
   "nn-027": {
     "box": 1,
     "due": "2026-09-30",
+    "last_seen": null,
+    "misses": 0
+  },
+  "nn-028": {
+    "box": 1,
+    "due": "2026-10-07",
+    "last_seen": null,
+    "misses": 0
+  },
+  "nn-029": {
+    "box": 1,
+    "due": "2026-10-07",
+    "last_seen": null,
+    "misses": 0
+  },
+  "nn-030": {
+    "box": 1,
+    "due": "2026-10-07",
+    "last_seen": null,
+    "misses": 0
+  },
+  "nn-031": {
+    "box": 1,
+    "due": "2026-10-07",
     "last_seen": null,
     "misses": 0
   },

@@ -1,7 +1,7 @@
 # Progress
 
-Last updated: 2026-10-05, the last session on the Acer before moving to the Mac. Written as a handover — a new session on another machine should
-be able to continue from this file alone.
+Last updated: 2026-10-07, on the Mac. From 2026-10-06 he studies only on the Mac. Written so
+that a fresh session can continue from this file alone.
 
 ---
 
@@ -39,21 +39,54 @@ turning the line downward; overfitting, shown with 3 pieces against 30 on noisy 
 2026-09-30, eight cards answered cold: **2 right, 6 missed.** Every miss had the same
 shape — the fact was right, the consequence attached to it was missing. Example: he named
 the space as belonging to the following word, but not that a trailing space in a prompt
-produces a rare lone-space token. A fact-and-consequence sheet for both blocks was given
-in chat on 2026-10-02 and is saved as `notes/fact-and-consequence.md`. Suggest he reads it
-before the next review.
+produces a rare lone-space token. A fact-and-consequence sheet was made on 2026-10-02
+(`notes/fact-and-consequence.md`). He read it on 2026-10-06, found it unclear, and disputes
+the diagnosis. It is retired — do not suggest it.
 
 He then took a few days off on 2026-10-01 — tired, finding study hard. Do not open the next
 session with twelve cards. Use `--limit 4`.
 
 ---
 
+## Session 2026-10-06/07 — what happened
+
+- Pulled the Acer's work onto the Mac. The Acer is retired.
+- He read `notes/fact-and-consequence.md` and found it unclear. It is now **retired**.
+- Review: 1 card asked (nn-002, loss and why square) — **miss**, recorded. The other three
+  were not reached.
+- Teaching went wrong. The tutor gave `gradient = 2 × (input) × (error)` before its meaning
+  and asked him to compute with it. He memorised the formula and lost that *the gradient is
+  the slope of the loss*. He also has no maths background, and words like "smooth at zero"
+  and "aims at the average" were used without teaching them.
+- Fix, at his request: research-backed teaching contract in `CLAUDE.md` §1.2, a
+  per-message checklist hook (`.claude/settings.json` → `review/teaching_check.sh`),
+  `notes/maths-for-ml.md`, Block 0 cards rewritten to test meaning (nn-002, 005, 010, 015,
+  019, 027) and four new cards (nn-028 to nn-031).
+
+Research behind §1.2 (checked 2026-10-07): conceptual-first teaching transfers better and
+lowers maths anxiety ([ERIC](https://files.eric.ed.gov/fulltext/EJ1469567.pdf),
+[EJMSTE](https://www.ejmste.com/download/the-effect-of-teaching-conceptual-knowledge-on-students-achievement-anxiety-about-and-attitude-12938.pdf));
+Mazur's ConcepTests — questions that cannot be answered by calculation
+([SERC](https://serc.carleton.edu/sp/library/conceptests/what.html)); hinge questions whose
+wrong options are known misconceptions
+([guide](https://www.structural-learning.com/post/hinge-questions-teachers-complete-guide));
+elaborative interrogation and self-explanation, Dunlosky et al. 2013
+([PDF](https://www.whz.de/fileadmin/lehre/hochschuldidaktik/docs/dunloskiimprovingstudentlearning.pdf));
+concreteness fading
+([ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0959475212000333)).
+
 ## How to start the next session
 
-1. **Review, four cards.** `python3 review/review.py --limit 4`. The six misses from
-   2026-09-30 are overdue and come first. Judge honestly: a fact without its consequence is
-   a miss, and say which half was missing.
-2. **Backpropagation.** Finishes Block 0. He wants paper and pen for it. Two stages, one
+1. **Review, four cards, judged on meaning.** `python3 review/review.py --limit 4`. Note
+   the runner orders by due date, so never-seen cards come first; put the 2026-09-30 misses
+   (nn-005, tok-007, tok-016, tok-022, tok-025) and nn-002 first by hand. A recited formula
+   without its meaning is a miss.
+2. **Re-teach "the gradient is the slope of the loss"** on the §1.2 ladder before anything
+   new: the question → the valley picture (`code/block-00/see_the_valley.py`) → measure the
+   slope by nudging (`code/block-00/slope_by_two_points.py`, code computes, he reads) →
+   only then the shortcut `2 × (input) × (error)`, as "a faster way to get what we measured,
+   for loss = error² only". Check with meaning questions, never arithmetic.
+3. **Backpropagation.** Finishes Block 0. He wants paper and pen for it. Two stages, one
    data row, small numbers, brackets on every group. Walk the error backwards one stage at
    a time and check each gradient against the nudge method in
    `code/block-00/slope_by_two_points.py`. The bridge is already laid: in
@@ -86,8 +119,14 @@ for it stays: `code/interview/01_agent_loop_plain_python.py`.
 
 ## Weak spots to revisit
 
-- [ ] **Gives the fact, drops the consequence.** The pattern behind six of eight misses on
-      2026-09-30. In an interview this is exactly where the follow-up question lands.
+- [ ] **Memorised the gradient formula; lost that the gradient is the slope of the loss**
+      (2026-10-07). Caused by the tutor giving the formula first. Cards nn-028, nn-031.
+- [ ] Why we square, and why a loss is needed at all (nn-002, nn-030, nn-031). The
+      "smooth at zero" and "aims at the average" reasons were not understood — they need
+      `maths-for-ml.md` entries taught first (median not yet taught).
+
+- [ ] ~~Gives the fact, drops the consequence~~ — he disputes this diagnosis (2026-10-07);
+      the misses are better explained by teaching that gave facts without understanding.
 - [ ] Described Pipeline A stage A4 as "count once and sort descending". It is a loop:
       count pairs, merge one, recount. Proof: `code/block-01/why_the_loop_must_recount.py`
       (`banana` creates `na+na`, which was not in the first count). Cards `tok-031`, `tok-032`.
@@ -167,7 +206,11 @@ code/interview/01_agent_loop_plain_python.py  two-hop question, plain Python, pr
 
 notes/bending-the-line.html        interactive page on layers and the bend, published at
                                    https://claude.ai/artifact/AjzmYxQ4fbeMwuZw6aXqyc
-notes/fact-and-consequence.md      every Block 0 and 1 fact with its consequence beside it
+notes/fact-and-consequence.md      RETIRED 2026-10-07 — unclear to him; history only
+notes/maths-for-ml.md              every maths idea taught, in his terms. Check before
+                                   using any maths word (CLAUDE.md §1.2 C)
+review/teaching_check.sh           checklist printed before every reply by the hook in
+                                   .claude/settings.json (CLAUDE.md §1.2)
 notes/questions-for-another-model.md  his twelve open questions as a paste-ready prompt
                                    (he used his own prompt instead)
 ```
@@ -199,6 +242,19 @@ Quote these; they were run, not estimated.
 ---
 
 ## Notes to tutor
+
+- **2026-10-07 — teaching failures, in order, so they are not repeated.** (1) Formula
+  before meaning; he memorised `2 × input × error` as "the gradient". (2) Arithmetic
+  questions ("what is the gradient if the error is 0.1?") — he: "one can do that with a
+  calculator". (3) Maths words without teaching. (4) Answered a narrower question than the
+  one asked, then defended it; he had to ask for an online check. (5) Widening — source
+  tables, extra reasons. (6) The fact→consequence sheet, built on an assumption. All six
+  are now rules in `CLAUDE.md` §1.2, with a checklist hook that prints every turn.
+- **He has no maths background** (2026-10-07). Teach the maths when a concept needs it,
+  with numbers, and record it in `notes/maths-for-ml.md`.
+- **He was right that one row was broken** (2026-10-06): the tutor summed two rows to show
+  why squaring matters, against his one-row rule. With one row, the reason is: without the
+  square, −4 is "smaller" than 0, so no error is not the lowest point.
 
 - **One row at a time. His explicit rule, given 2026-09-24.** Teach gradient descent with a
   single measurement per update — stochastic gradient descent — never a summed or averaged

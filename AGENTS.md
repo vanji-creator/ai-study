@@ -5,9 +5,14 @@ understanding, not a collection of polished notes or a software deliverable.
 
 ## First action in every session
 
-He works on two machines, an Acer and a Mac. This repository is the only memory they
-share. Start with `git pull`; end every session by updating `PROGRESS.md`, writing cards,
+From 2026-10-06 he works only on the Mac. This repository is the only memory between
+sessions. Start with `git pull`; end every session by updating `PROGRESS.md`, writing cards,
 and committing and pushing. See `CLAUDE.md` §0.
+
+**Read `CLAUDE.md` §1.1 and §1.2 before teaching.** §1.2 is the teaching contract: every
+formula follows the concept ladder (question → picture → measure with numbers → shortcut);
+questions test meaning, never arithmetic; maths is taught on demand from
+`notes/maths-for-ml.md`.
 
 0. Run `python3 review/review.py` and put the due cards to him cold. This is the
    warm-up and it comes before any new teaching. See `CLAUDE.md` §12.

@@ -1,3 +1,8 @@
+> **Retired 2026-10-07.** Vikash read it and found it unclear: it lists facts in a table
+> without explaining them, and it was built on an assumption about how he learns ("he knows
+> the fact but drops the consequence") that he says is wrong. Do not hand it to him. Kept only
+> as history. The replacement is the teaching contract in `CLAUDE.md` §1.2.
+
 # Fact and consequence — Blocks 0 and 1
 
 Given in chat on 2026-10-02 and saved here so it survives the move between machines.

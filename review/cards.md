@@ -213,9 +213,10 @@ A: One number inside the model that training is allowed to change. Training mean
 ### id: nn-002
 block: 0
 Q: What is the loss, and why is it squared?
-A: One number saying how wrong the current parameters are on the data. Squaring makes
-   negative errors count the same as positive ones, and makes large errors count much more
-   than small ones.
+A: One number saying how wrong the model is. Squaring does two jobs. It makes "no error"
+   the lowest point — with a plain error, −4 would look better than 0 and training would
+   push the prediction down forever. And it makes a big error cost much more than a small
+   one (error 10 costs 100, error 2 costs 4).
 
 ### id: nn-003
 block: 0
@@ -232,9 +233,10 @@ A: Near the bottom of the valley the loss barely changes when the parameter chan
 
 ### id: nn-005
 block: 0
-Q: Write the update rule and explain the minus sign.
-A: new_weight = weight − learning_rate × gradient. The gradient points uphill — it says how
-   fast the loss rises if you increase the parameter — so you move the other way.
+Q: The update rule subtracts the gradient. Why subtract — what would go wrong if it added?
+A: The gradient points uphill: it says how fast the loss rises if you increase the weight.
+   We want the loss to fall, so we move the other way. Adding would walk uphill, and the
+   loss would grow every step.
 
 ### id: nn-006
 block: 0
@@ -265,11 +267,11 @@ A: A parameter, a loss, a gradient, a learning rate, and repetition until the gr
 
 ### id: nn-010
 block: 0
-Q: In the reranker example, what were the parameter, the loss at weight 0.5, and the
-   correct weight?
-A: Parameter: weight in predicted_time = weight × candidates. Loss at 0.5 was 120. The
-   valley bottom was weight 0.3, loss 0 — zero only because those three measurements lie
-   on a perfect line.
+Q: In the reranker example, the loss at the best weight was exactly 0. Why is that unusual,
+   and what would the loss look like at the best weight on real measurements?
+A: It was 0 only because the three measurements lay on a perfect line, so one weight could
+   predict all of them exactly. Real measurements have noise, so no single weight fits every
+   row; the bottom of the valley is the smallest loss, but it is above 0.
 
 ### id: nn-011
 block: 0
@@ -303,10 +305,11 @@ A: The tilt of the ground at the one spot you are standing on, as a single numbe
 block: 0
 Q: Two learning rates, 0.000333 and 0.000334, on the same problem. One converges, one
    explodes. What single quantity decides it?
-A: The multiplier 1 - (2 x sum of squared inputs) x learning_rate. While its size is under
-   1 the distance from the answer shrinks each step; over 1 it grows. Because the inputs
-   set that number, the safe learning rate depends on the scale of the input data — which
-   is why inputs are normalised and learning rates are tuned, not derived.
+A: Whether each step shrinks or grows the distance from the answer. Each step multiplies
+   that distance by one number. Below 1 in size, the distance shrinks and training settles;
+   above 1, it grows and explodes. The size of the inputs helps set that number, so the safe
+   learning rate depends on the scale of the data — which is why inputs are normalised and
+   learning rates are tuned, not derived.
 
 ### id: nn-016
 block: 0
@@ -331,8 +334,9 @@ A: During training an actual exists for every row, so an error and a gradient ex
 
 ### id: nn-019
 block: 0
-Q: Why is the bias's gradient `2 x (1 x error)` while the weight's is `2 x (input x error)`?
-A: The factor is how far the prediction moves when that parameter moves by 1. The weight is
+Q: With the same error, why does the weight get a bigger gradient when the input is big, while
+   the bias's gradient does not depend on the input at all?
+A: The gradient includes how far the prediction moves when that parameter moves by 1. The weight is
    multiplied by the input, so its influence is the input. The bias is only added, so its
    influence is 1 whatever the input. The bias is a weight whose input is always 1.
 
@@ -407,7 +411,38 @@ A: Neighbouring PAIRS of pieces, not single characters. The count of single char
 block: 0
 Q: The loss is squared, so it is always positive and carries no direction. Yet the gradient
    does carry a direction. Where does the sign come back from?
-A: The loss is error squared. The gradient is `2 x (input x error)` — the error appears there
-   UNSQUARED, so its sign survives. Squaring removes direction from the measure of
-   wrongness; the gradient is a different quantity and keeps it. That sign is the only thing
-   telling the update which way to move.
+A: The gradient is not the loss. It is the SLOPE of the loss. Measure the slope of error²
+   by nudging and you find it is about 2 × error — the error appears there unsquared, so its
+   sign survives. The loss measures how wrong; its slope says which way. That sign is the
+   only thing telling the update which way to move.
+
+### id: nn-028
+block: 0
+Q: What is the gradient the slope OF? And where does the shortcut `2 × (input) × (error)`
+   come from?
+A: The slope of the loss. You can measure it by nudging the weight and watching the loss
+   change. The shortcut is only a faster way to get that same number, and it holds only for
+   the loss error². It is not the definition of the gradient.
+
+### id: nn-029
+block: 0
+Q: You change the loss from error² to |error|. Does the gradient shortcut stay the same?
+   Why or why not?
+A: No. The shortcut is the slope of one particular loss. The slope of |error| is +1 or −1
+   whatever the size of the error, so its gradient knows the direction but not the
+   distance: steps never get smaller near the answer, and the weight jumps back and forth.
+
+### id: nn-030
+block: 0
+Q: Why is the plain error (no square, no absolute value) a useless loss, even with one row?
+A: Training makes the loss as small as possible. With the plain error, −4 is smaller than 0,
+   so the model would push its prediction down forever and call that better. Its slope is
+   also the same whichever side of the answer you are on, so it cannot point the way.
+
+### id: nn-031
+block: 0
+Q: The update rule never uses the loss number. So why is a loss needed at all?
+A: The gradient is the slope of the loss — with no loss there is nothing to take a slope
+   of, so no gradient and no direction. The choice of loss also decides what "good" means.
+   And the loss is the number you watch to see whether training works and to compare
+   models.

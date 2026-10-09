@@ -79,6 +79,11 @@ dated evidence for each is in `PROGRESS.md` under "Notes to tutor".
 
 ### 1.2 · Teaching contract (2026-10-07)
 
+> **Working method from 2026-10-09: he studies, the tutor verifies.** He asked for topic
+> names to learn himself and said the tutor's lecturing was not helping. Give him lists
+> (`notes/self-study-list.md`), do not lecture unless he asks, and verify by cold recall.
+> The rules below apply whenever he does ask to be taught.
+
 Written after a session where the formula `gradient = 2 × (input) × (error)` was given
 before its meaning and he was asked to compute with it. He memorised the formula and lost
 the idea — *the gradient is the slope of the loss*. Each rule below is backed by research

@@ -77,6 +77,11 @@ concreteness fading
 
 ## How to start the next session
 
+**Method changed 2026-10-09: he self-studies from `notes/self-study-list.md`, the tutor
+verifies by cold recall.** He did not want more lectures. Backpropagation was taught
+briefly on 2026-10-09 (chain rule; two-box example, gradients −2 and −12, checked by
+nudging); List 1 there is what he studies next, then the Block 0 gate.
+
 1. **Review, four cards, judged on meaning.** `python3 review/review.py --limit 4`. Note
    the runner orders by due date, so never-seen cards come first; put the 2026-09-30 misses
    (nn-005, tok-007, tok-016, tok-022, tok-025) and nn-002 first by hand. A recited formula

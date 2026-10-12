@@ -81,7 +81,13 @@ Teach with numbers before using either word.
 It is the formal name for the slope found by nudging with a smaller and smaller nudge. Do not
 use the word until it is taught from the slope entry above.
 
-## Chain rule — not yet taught
+## Chain rule — taught 2026-10-09 and 2026-10-12
 
-Needed for backpropagation. Teach from nudging: if A moves B, and B moves C, then how much C
-moves is how much B moves times how much C moves per unit of B.
+If A changes B and B changes C, A's effect on C is (A's effect on B) × (B's effect on C).
+In a chain of boxes, the gradient of a weight is the slopes of every box between that weight
+and the loss, multiplied together.
+
+Worked example: z = x·w + b, h = ReLU(z), L = ½(h − y)², x=2, w=3, b=1, y=5. Slopes:
+L per h = h − y = 2; h per z = 1 (z is positive); z per w = x = 2; z per b = 1. So the
+gradient of w = 2 × 1 × 2 = 4 and of b = 2 × 1 × 1 = 2. Checked by nudging.
+Script: `code/block-00/backprop_by_hand.py`.
